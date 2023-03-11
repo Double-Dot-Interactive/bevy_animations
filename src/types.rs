@@ -2,21 +2,55 @@ use crate::animations::*;
 use crate::*;
 
 /// This will determing which y index will be in the animating calculation
-/// So if we have a sprite sheet like this
+/// So if we have a sprite sheet like [`this`](https://github.com/y0Phoenix/bevy_animations/blob/master/example%20sprites/example.png?raw=true)
 /// 
-/// right facing sprites
-/// up facing sprites
-/// left facing sprites
-/// down facing sprites
-/// Our implentation would look like this
+/// Our code implementation will look like this
 /// ```
 /// AnimationDirectionIndexes::new(
-///     1,  // left
+///     4,  // left
 ///     3,  // right
 ///     2,  // up
-///     4   // down
+///     1   // down
 /// );
 /// ```
+/// **Note** that bevy_animations uses a **1st index** basis for the DirectionIndexes instead of **0th index**
+/// 
+/// ###
+/// We can then take that code and call `insert_animation()` from the Animations Resource like this
+/// ```
+/// use bevy::prelude::*;
+/// use bevy_animations::*
+/// 
+/// fn setup_entity(
+///     mut commands: Commands,
+///     mut animations: ResMut<Animations>
+/// ) {
+///     let entity = commands.spawn(
+///         AnimationDirection::Still // the `AnimationDirection` component is needed on the entity to determine the direction
+///         SpriteSheetBundle {
+///             texture_atlas: // your sprite sheet handle
+///             transform: Transform::from_xyz(0., 0., 0.) // your desired location in the `World`
+///         }
+///         /* The rest of your entity configuration */
+///     );
+/// 
+///     animations.insert_animation(
+///         entity.id(),
+///         AnimationType::Transform(
+///             TransformAnimation::new(
+///                 /* animation_frames */ vec![0, 1, 2, 3] // the x index for your frames to cycle through
+///                 /* meters per frame */ 0.55 // your desired meters per frame
+///                 /* handle */ texture_atlas_hanle // your sprite sheet
+///                 /* frame */ Vec2::new(4., 4.) // the length and height of your sprite sheet
+///                 /* direction_indexes */ AnimationDirectionIndexes::new(4, 3, 2, 1) // from the example above
+///                 /* repeating */ true // if the animation is repeating or not
+///             )
+///         )
+///     )
+/// }
+/// ```
+/// 
+/// **Note** how the `animation_frames` field from the animation definition above is 0th index based
 #[derive(Default, Clone, Debug)]
 pub struct AnimationDirectionIndexes {
     pub left: usize,
