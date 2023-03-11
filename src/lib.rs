@@ -35,3 +35,32 @@ pub struct AnimatingEntities {
 pub struct Animations {
     entities: HashMap<Entity, AnimatingEntities>,
 }
+
+impl Animations {
+    pub fn insert_animation(&mut self, key: Entity, value: AnimationType) -> &mut Self {
+        if let Some(entity) = self.entities.get_mut(&key) {
+            entity.animations.insert(value.get_name(), Arc::new(Mutex::new(value)));
+            return self;
+        }
+        else {
+            let value = Arc::new(Mutex::new(value));
+            let mut map = HashMap::new();
+            map.insert(value.lock().unwrap().get_name(), Arc::clone(&value));
+            self.entities.insert(key, AnimatingEntities { 
+                entity: key, 
+                animations: map, 
+                curr_animation: value, 
+                curr_direction: AnimationDirection::Still,
+                last_valid_direction: AnimationDirection::Down,
+                in_blocking_animation: false
+            });
+            return self;
+        }
+    }
+    pub fn in_blocking_animation(&self, entity: Entity) -> Option<bool> {
+        match self.entities.get(&entity) {
+            Some(animating_entity) => Some(animating_entity.in_blocking_animation),
+            None => None
+        }
+    }
+}
