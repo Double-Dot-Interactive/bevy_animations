@@ -8,6 +8,7 @@ license = "MIT OR Apache-2.0"
 keywords = ["gamedev", "graphics", "bevy", "animations"]
 homepage = "https://github.com/y0Phoenix/bevy_animations"
 repository = "https://github.com/y0Phoenix/bevy_animations.git"
+documentation = ""
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -17,3 +18,4 @@ bevy_animations_macros = "0.4.0"
 
 [lib]
 path = "src/lib.rs"
+proc-macro = true
