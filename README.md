@@ -93,7 +93,8 @@ animations.insert_animation(entity.id(), AnimationType::Timed(
 fn move_player(
     mut event_writer: EventWriter<AnimationEvent>
 ) {
-    // your move logic here
+    // your move logic here...
+    
     event_writer.send(AnimationEvent("player_running", entity));
 }
 ```
@@ -103,6 +104,22 @@ fn move_player(
 * **Note** if you send an event with a different name the current animation of the entity will change immediately.
 
 * **Note** an animation that has been sent will animate till end or repeat forever
+
+#### If you want to change the direction of the animation you will query it from the `AnimatingEntity` like this
+```rust
+fn move_player(
+    mut event_writer: EventWriter<AnimationEvent>,
+    mut query: Query<&mut AnimationDirection, With<Player>> // specify the `With` to get the entity associated with your custom component 
+) {
+    // your move logic here...
+
+    let mut direction = query.single_mut(); // get the direction via query
+
+    direction = AnimationDirection::Left; // the direction can be changed like this
+
+    event_writer.send(AnimationEvent("player_running", entity));
+}
+```
 
 #### Knowing this you can change the `player_running` animation to `player_die` in another system where you could check collisions like this
 ```rust
