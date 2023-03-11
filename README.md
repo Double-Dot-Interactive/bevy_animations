@@ -75,7 +75,7 @@ animations.insert_animation(entity.id(), AnimationType::Timed(
         /* blocking */ true, // if the animation should block others
         /* blocking_priority */ 1 // the priority for which animation should block other blocking animations
     ),
-    "player_harvesting" // the name of the animation. will be used when sending an `AnimationEvent`
+    "player_die" // the name of the animation. will be used when sending an `AnimationEvent`
 ))
 ```
 
