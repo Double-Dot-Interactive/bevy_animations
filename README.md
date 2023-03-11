@@ -1,9 +1,9 @@
 # bevy_animations is a Lightweight 2d animations engine built for Bevy
 
-## What bevy_animations accomplished
+## What bevy_animations accomplishes
 1. using bevy_animations is easy and the animation configurations are simple
 
-2. bevy_animation is fast enough to handle all of the entities you want animated
+2. bevy_animations is fast enough to handle all of the entities you want animated
 
 ### Add bevy_animations to your Bevy App
 ```rust
@@ -21,10 +21,11 @@ fn main() {
 ```
 
 ### How bevy_animations animations work
-* they work based off of left to right based animations from sprite sheets
+* they work off of left to right based animations from sprite sheets
 * specified timings or `meters_per_frame` for each frame
 * user defining which y indexes are left, right, up and down facing sprites
-* timed animations can block others from happening and utilized a priortity based system so you can define multiple ***blocking*** animations with different priority to render
+* timed animations can block others from happening
+* utilizing a priortity based system so you can define multiple ***blocking*** animations with different priorities to render
 
 ### How to define a bevy_animations animation
 You first need to spawn an entity using `Commands` like this
@@ -33,17 +34,23 @@ You first need to spawn an entity using `Commands` like this
 use bevy_animations::*;
 use bevy::prelude::*;
 
-let entity = commands.spawn(
-    AnimationDirection::Still // the `AnimationDirection` component is needed on the entity to determine the direction
-    SpriteSheetBundle {
-        texture_atlas: // your sprite sheet handle
-        transform: Transform::from_xyz(0., 0., 0.) // your desired location in the `World`
-    }
-    /* The rest of your entity configuration */
-);
+fn entity_setup(
+    mut commands: Commands,
+    animations: ResMut<Animations>
+) {
+    let entity = commands.spawn(
+        AnimationDirection::Still // the `AnimationDirection` component is needed on the entity to determine the direction
+        SpriteSheetBundle {
+            texture_atlas: // your sprite sheet handle
+            transform: Transform::from_xyz(0., 0., 0.) // your desired location in the `World`
+        }
+        /* The rest of your entity configuration */
+    );
+}
+
 ```
 
-You can then add your animations to `Res<Animations>` like this
+You can then add your animations to `ResMut<Animations>` like this
 
 ```rust
 animations.insert_animation(
@@ -51,7 +58,7 @@ animations.insert_animation(
     AnimationType::Transform(
         TransformAnimation::new(
             /* animation_frames */ vec![0, 1, 2, 3] // the x index for your frames to cycle through
-            /* meters per frame */ 0.55 // your desired meters per frame
+            /* meters_per_frame */ 0.55 // your desired meters per frame
             /* handle */ texture_atlas_hanle // your sprite sheet
             /* frame */ Vec2::new(4., 4.) // the length and height of your sprite sheet
             /* direction_indexes */ AnimationDirectionIndexes::new(4, 3, 2, 1) // from the example above
@@ -85,7 +92,7 @@ fn move_player(
     mut event_writer: EventWriter<AnimationEvent>
 ) {
     // your move logic here
-    event_write.send(AnimationEvent("player_running", entity));
+    event_writer.send(AnimationEvent("player_running", entity));
 }
 ```
 
@@ -93,12 +100,12 @@ fn move_player(
 
 * **Note** if you send an event with a different name the current animation of the entity will change immediately. 
 
-Knowing this you can change the `player_running` animation in another system where I am checking collisions like this
+Knowing this you can change the `player_running` animation to `player_die` in another system where you could check collisions like this
 ```rust
 fn check_collisions(
     mut commands: Commands,
     rapier_context: Res<RapierContext> // great 2d physics engine for lots of things we are using it for collision detection
-    mut event_sender: EventWriter<AnimationEvent>
+    mut event_writer: EventWriter<AnimationEvent>
 ) {
     for pair in rapier_context.contact_pairs() {
         if pair.has_any_active_contacts() {
@@ -106,7 +113,7 @@ fn check_collisions(
             let entity = pair.collider1();
             
             // send the event for the animating entity
-            event_sender.send(AnimationEvent("player_die", entity));
+            event_writer.send(AnimationEvent("player_die", entity));
             // despawn the entity after death
             commands.entity(entity).despawn();
             return;
