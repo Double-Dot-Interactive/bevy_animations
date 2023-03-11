@@ -51,7 +51,7 @@ use crate::*;
 /// ```
 /// 
 /// **Note** how the `animation_frames` field from the animation definition above is 0th index based
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct AnimationDirectionIndexes {
     pub left: usize,
     pub right: usize,
@@ -62,6 +62,12 @@ pub struct AnimationDirectionIndexes {
 impl AnimationDirectionIndexes {
     pub fn new(left: usize, right: usize, up: usize, down: usize) -> Self{
         Self { left, right, up, down }
+    }
+}
+
+impl Default for AnimationDirectionIndexes {
+    fn default() -> Self {
+        Self { left: 1, right: 1, up: 1, down: 1 }
     }
 }
 

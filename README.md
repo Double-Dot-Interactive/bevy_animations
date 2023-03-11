@@ -28,7 +28,8 @@ fn main() {
 * utilizing a priortity based system so you can define multiple ***blocking*** animations with different priorities to render
 
 ### How to define a bevy_animations animation
-You first need to spawn an entity using `Commands` like this
+
+#### You first need to spawn an entity using `Commands` like this
 
 ```rust
 use bevy_animations::*;
@@ -47,10 +48,10 @@ fn entity_setup(
         /* The rest of your entity configuration */
     );
 }
-
 ```
+**Note** if you are using a one directional sprite you should still add the `AminationDirection` component as default/Still
 
-You can then add your animations to `ResMut<Animations>` like this
+#### You can then add your animations to `ResMut<Animations>` like this
 
 ```rust
 animations.insert_animation(
@@ -68,8 +69,9 @@ animations.insert_animation(
     "player_running" // the name of the animation. will be used when sending an `AnimationEvent`
 )
 ```
+**Note** if you have a one directional animation you can use `AnimationDirectionIndexes::default()` or set everything to 1 `AnimationDirectionIndexed::new(1, 1, 1, 1)`
 
-You can also add a `TimedAnimation` like this
+#### You can also add a `TimedAnimation` like this
 ```rust
 animations.insert_animation(entity.id(), AnimationType::Timed(
     TimedAnimation::new(
@@ -86,7 +88,7 @@ animations.insert_animation(entity.id(), AnimationType::Timed(
 ))
 ```
 
-We can then start an animation by sending it over an `EventWriter<AnimationEvent>` like this
+#### We can then start an animation by sending it over an `EventWriter<AnimationEvent>` like this
 ```rust
 fn move_player(
     mut event_writer: EventWriter<AnimationEvent>
@@ -98,9 +100,11 @@ fn move_player(
 
 * **Note** that you can send an event of the same name multiple times even during animation without ruining it
 
-* **Note** if you send an event with a different name the current animation of the entity will change immediately. 
+* **Note** if you send an event with a different name the current animation of the entity will change immediately.
 
-Knowing this you can change the `player_running` animation to `player_die` in another system where you could check collisions like this
+* **Note** an animation that has been sent will animate till end or repeat forever
+
+#### Knowing this you can change the `player_running` animation to `player_die` in another system where you could check collisions like this
 ```rust
 fn check_collisions(
     mut commands: Commands,
