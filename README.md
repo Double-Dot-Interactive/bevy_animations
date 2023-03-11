@@ -6,7 +6,7 @@
 2. bevy_animation is fast enough to handle all of the entities you want animated
 
 ### Add bevy_animations to your Bevy App
-```
+```rust
 use bevy_animations::AnimationsPlugin;
 use bevy::prelude::*;
 
@@ -29,7 +29,7 @@ fn main() {
 ### How to define a bevy_animations animation
 You first need to spawn an entity using `Commands` like this
 
-```
+```rust
 use bevy_animations::*;
 use bevy::prelude::*;
 
@@ -45,7 +45,7 @@ let entity = commands.spawn(
 
 You can then add your animations to `Res<Animations>` like this
 
-```
+```rust
 animations.insert_animation(
     entity.id(), // the entity is needed to determine which `Handle<TextureAtlas>` is being manipulated
     AnimationType::Transform(
@@ -63,7 +63,7 @@ animations.insert_animation(
 ```
 
 You can also add a `TimedAnimation` like this
-```
+```rust
 animations.insert_animation(entity.id(), AnimationType::Timed(
     TimedAnimation::new(
         /* animation_frames */ vec![0, 1, 2, 3] // the x index for your frames to cycle through, 
@@ -80,7 +80,7 @@ animations.insert_animation(entity.id(), AnimationType::Timed(
 ```
 
 We can then start an animation by sending it over an `EventWriter<AnimationEvent>` like this
-```
+```rust
 fn move_player(
     mut event_writer: EventWriter<AnimationEvent>
 ) {
@@ -94,7 +94,7 @@ fn move_player(
 * **Note** if you send an event with a different name the current animation of the entity will change immediately. 
 
 Knowing this you can change the `player_running` animation in another system where I am checking collisions like this
-```
+```rust
 fn check_collisions(
     mut commands: Commands,
     rapier_context: Res<RapierContext> // great 2d physics engine for lots of things we are using it for collision detection
