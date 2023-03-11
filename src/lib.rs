@@ -2,11 +2,13 @@ use std::{collections::HashMap, time::Duration, sync::{Arc, Mutex}};
 
 use bevy::{prelude::*};
 
-use crate::types::*;
-
 mod animations;
 mod plugins;
 mod types;
+
+pub use animations::*;
+pub use plugins::*;
+pub use types::*;
 
 #[derive(Debug, Resource, Default)]
 pub struct AnimationsConfig {

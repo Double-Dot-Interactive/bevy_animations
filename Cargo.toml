@@ -14,3 +14,6 @@ repository = "https://github.com/y0Phoenix/bevy_animations.git"
 [dependencies]
 bevy = "0.9.1"
 bevy_animations_macros = "0.4.0"
+
+[lib]
+path = "src/lib.rs"
