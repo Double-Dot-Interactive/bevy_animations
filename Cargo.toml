@@ -18,4 +18,3 @@ bevy_animations_macros = "0.4.0"
 
 [lib]
 path = "src/lib.rs"
-proc-macro = true
