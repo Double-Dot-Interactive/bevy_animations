@@ -69,7 +69,7 @@ animations.insert_animation(
     "player_running" // the name of the animation. will be used when sending an `AnimationEvent`
 )
 ```
-**Note** if you have a one directional animation you can use `AnimationDirectionIndexes::default()` or set everything to 1 `AnimationDirectionIndexed::new(1, 1, 1, 1)`
+**Note** if you have a one directional animation you can use `AnimationDirectionIndexes::default()` or set everything to 1 `AnimationDirectionIndexes::new(1, 1, 1, 1)`
 
 #### You can also add a `TimedAnimation` like this
 ```rust
@@ -94,7 +94,7 @@ fn move_player(
     mut event_writer: EventWriter<AnimationEvent>
 ) {
     // your move logic here...
-    
+
     event_writer.send(AnimationEvent("player_running", entity));
 }
 ```

@@ -63,4 +63,10 @@ impl Animations {
             None => None
         }
     }
+    pub fn is_added(&self, key: &Entity) -> bool {
+        if let Some(_) = self.entities.get(key) {
+            return true;
+        }
+        false
+    }
 }
