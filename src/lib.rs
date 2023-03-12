@@ -63,7 +63,8 @@ impl Animations {
             None => None
         }
     }
-    pub fn is_added(&self, key: &Entity) -> bool {
+    /// Returns `true` if the `Entity` exists in the `Animations` map
+    pub fn is_inserted(&self, key: &Entity) -> bool {
         if let Some(_) = self.entities.get(key) {
             return true;
         }
