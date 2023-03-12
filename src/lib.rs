@@ -23,12 +23,12 @@ pub struct AnimationTimer(pub Timer);
 
 #[derive(Debug)]
 pub struct AnimatingEntities {
-    entity: Entity,
-    in_blocking_animation: bool,
-    animations: HashMap<&'static str, Arc<Mutex<AnimationType>>>,
-    curr_animation: Arc<Mutex<AnimationType>>,
-    curr_direction: AnimationDirection,
-    last_valid_direction: AnimationDirection
+    pub entity: Entity,
+    pub in_blocking_animation: bool,
+    pub animations: HashMap<&'static str, Arc<Mutex<AnimationType>>>,
+    pub curr_animation: Arc<Mutex<AnimationType>>,
+    pub curr_direction: AnimationDirection,
+    pub last_valid_direction: AnimationDirection
 }
 
 #[derive(Default, Resource, Debug)]
