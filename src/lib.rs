@@ -70,4 +70,12 @@ impl Animations {
         }
         false
     }
+    /// Mainly For Debug Purposes to see the map. Not reccomended to change item.
+    pub fn get_mut_map(&mut self) -> &mut HashMap<Entity, AnimatingEntities> {
+        &mut self.entities
+    }
+    /// Mainly For Debug Purposes to see the map. Not reccomended to change item.
+    pub fn get_map(&self) -> &HashMap<Entity, AnimatingEntities> {
+        &self.entities
+    }
 }
