@@ -1,6 +1,8 @@
 use crate::animations::*;
 use crate::*;
 
+pub type AnimationName = &'static str;
+
 /// This will determing which y index will be in the animating calculation
 /// So if we have a sprite sheet like [`this`](https://github.com/y0Phoenix/bevy_animations/blob/master/example%20sprites/example.png?raw=true)
 /// 
@@ -73,20 +75,31 @@ impl Default for AnimationDirectionIndexes {
 
 #[derive(Debug, Component)]
 pub enum AnimationType {
-    Timed(TimedAnimation, &'static str),
-    Transform(TransformAnimation, &'static str)
+    // This is Primarily for This Is Primarily For Animations on players or NPCs, for example shooting a bow or reloading a gun 
+    Timed(TimedAnimation, AnimationName),
+    /// This Is Primarily For Animations on players or NPCs, for example walking or running
+    Transform(TransformAnimation, AnimationName),
+    /// This Is Primarily For Animations on objects, for example doors to open and close
+    LinearTimed(LinearTimedAnimation, AnimationName)
 }
 
 impl AnimationType {
     pub fn get_atlas(&self) -> Handle<TextureAtlas> {
         match self {
             AnimationType::Timed(animation, _) => animation.handle.clone(),
-            AnimationType::Transform(animation, _) => animation.handle.clone()
+            AnimationType::Transform(animation, _) => animation.handle.clone(),
+            AnimationType::LinearTimed(animation, _) => animation.handle.clone(),
         }
     }
     pub fn timed_animation(&mut self) -> Option<&mut TimedAnimation> {
         match self {
-            AnimationType::Timed(timing_animation, _) => Some(timing_animation),
+            AnimationType::Timed(timed_animation, _) => Some(timed_animation),
+            _ => None
+        }
+    }
+    pub fn linear_timed_animation(&mut self) -> Option<&mut LinearTimedAnimation> {
+        match self {
+            AnimationType::LinearTimed(linear_timed_animation, _) => Some(linear_timed_animation),
             _ => None
         }
     }
@@ -99,7 +112,15 @@ impl AnimationType {
     pub fn get_name(&self) -> &'static str {
         match self {
             AnimationType::Timed(_, name) => &name,
-            AnimationType::Transform(_, name) => &name
+            AnimationType::Transform(_, name) => &name,
+            AnimationType::LinearTimed(_, name) => &name,
+        }
+    }
+    pub fn reset_animation(&mut self) {
+        match self {
+            AnimationType::Timed(animation, _) => animation.reset_animation(),
+            AnimationType::Transform(animation, _) => animation.reset_animation(),
+            AnimationType::LinearTimed(animation, _) => animation.reset_animation(),
         }
     }
 }

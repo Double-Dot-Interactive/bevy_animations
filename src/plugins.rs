@@ -60,7 +60,7 @@ fn catch_event(
     // our main event loop
     for event in animation_events.iter() {
         // get the animating entity from the entity passed in from our event
-        let animating_entity = animations.entities.get_mut(&event.1).expect(format!("Entity Not Found in Map For {} animation", event.0).as_str());
+        let animating_entity = animations.entities.get_mut(&event.1).expect(format!("Entity Not Found in Map For {} animation make sure your adding every necessary component to the entity i.e `AnimationDirection`", event.0).as_str());
         // query the texture the sprite and the current direction of the entity
         let (mut texture_atlas, mut sprite, _, direction) = match query.get_mut(animating_entity.entity) {
             Ok(handle) => handle,
@@ -73,7 +73,7 @@ fn catch_event(
         // if incoming event is new 
         if animating_entity.curr_animation.lock().unwrap().get_name() != event.0 {
             // get the Arc pointer for the animation
-            let new_animation_arc = animating_entity.animations.get(event.0).expect(format!("No Animation Found For {}", event.0).as_str());
+            let new_animation_arc = animating_entity.animations.get(event.0).expect(format!("No Animation Found For `{}` make sure the name matches your configuration", event.0).as_str());
             // unlock the animation if we don't do this we will hit a deadlock whenever we try to unlock the Arc<Mutex<>>
             let mut new_animation = new_animation_arc.lock().unwrap();
             let mut blocking = false;
@@ -101,12 +101,14 @@ fn catch_event(
                     continue;
                 }
             }
+            animating_entity.curr_animation.lock().unwrap().reset_animation();
             animating_entity.curr_animation = new_animation_arc.clone();
             animating_entity.in_blocking_animation = blocking;
-             
+            
             sprite.index = sprite_index;
             *texture_atlas = new_animation.get_atlas();
         }
+        animating_entity.curr_animation_called = true;
         // if our direction is changed we can set the current direction
         if animating_entity.curr_direction != *direction {
             animating_entity.curr_direction = direction.clone();
@@ -129,17 +131,34 @@ fn catch_event(
         };
         // unlock the current animation once so we don't hit a deadlock
         let mut curr_animation = animation_entity.curr_animation.lock().unwrap();
+        let name = curr_animation.get_name();
+
+        // if the current animation wasn't started via an `AnimationEvent`
+        if !animation_entity.curr_animation_called {
+            continue;
+        }
+
         // if the current animation is transform based we should cycle it
         if let Some(transform_animation) = curr_animation.transform_animation() {
             if animation_entity.in_blocking_animation {
                 continue;
             }
-            transform_animation.cycle_animation(sprite, &animation_entity.last_valid_direction, transform, config.pixels_per_meter);
+            if let None = transform_animation.cycle_animation(sprite, &animation_entity.last_valid_direction, transform, config.pixels_per_meter, name) {
+                animation_entity.curr_animation_called = false;
+            }
         } 
         // if our current animation is timed based we should cycle it
         else if let Some(timed_animation) = curr_animation.timed_animation() {
-            if let None = timed_animation.cycle_animation(sprite, &animation_entity.last_valid_direction, time.delta()) {
+            if let None = timed_animation.cycle_animation(sprite, &animation_entity.last_valid_direction, time.delta(), name) {
                 animation_entity.in_blocking_animation = false;
+                animation_entity.curr_animation_called = false;
+            }
+        }
+        // if the current animation is linear time based we should cycle it
+        else if let Some(linear_timed_animation) = curr_animation.linear_timed_animation() {
+            if let None = linear_timed_animation.cycle_animation(sprite, time.delta(), name) {
+                animation_entity.in_blocking_animation = false;
+                animation_entity.curr_animation_called = false;
             }
         }
         // if we get here something bad happened it will most likely never hit as the typing is pretty strong
@@ -155,6 +174,7 @@ fn remove_entites(
     mut entities_to_remove: ResMut<EntitesToRemove>
 ) {
     for entity in entities_to_remove.0.iter() {
+        println!("removing {:?}", entity);
         animations.entities.remove(&entity);
     }
     entities_to_remove.0.clear();
