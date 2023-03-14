@@ -50,6 +50,9 @@ fn entity_setup(
 ```
 **Note** if you are using a one directional sprite you still **NEED** to add the `AminationDirection` component
 
+**Note** if you don't add the `AnimationDirection` component to your entity it will seem as though your animations will never be inserted because `bevy_animations` is looking for the
+`AnimationDirection` component in it's `Query`s
+
 #### You can then add your animations to `ResMut<Animations>` like this
 
 ```rust
