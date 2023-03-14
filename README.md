@@ -21,7 +21,6 @@ fn main() {
 ```
 
 ### How bevy_animations animations work
-* they work off of left to right based animations from sprite sheets
 * specified timings or `meters_per_frame` for each frame
 * user defining which y indexes are left, right, up and down facing sprites
 * timed animations can block others from happening
@@ -49,7 +48,7 @@ fn entity_setup(
     );
 }
 ```
-**Note** if you are using a one directional sprite you should still add the `AminationDirection` component as default/Still
+**Note** if you are using a one directional sprite you still **NEED** to add the `AminationDirection` component
 
 #### You can then add your animations to `ResMut<Animations>` like this
 
@@ -62,7 +61,7 @@ animations.insert_animation(
             /* meters_per_frame */ 0.55 // your desired meters per frame
             /* handle */ texture_atlas_hanle // your sprite sheet
             /* frame */ Vec2::new(4., 4.) // the length and height of your sprite sheet
-            /* direction_indexes */ AnimationDirectionIndexes::new(4, 3, 2, 1) // from the example above
+            /* direction_indexes */ AnimationDirectionIndexes::new(4, 3, 2, 1) // the indexes to determine the correct sprite for the direction
             /* repeating */ true // if the animation is repeating or not
         )
     ),
@@ -79,7 +78,7 @@ animations.insert_animation(entity.id(), AnimationType::Timed(
         /* frame_timings_in_secs */ vec![0.001, 0.300, 0.300, 0.250], // Note that the the first timing is set to 0.001 so the animation starts immediately. If this value doesn't suit your needs, you can change it to another parameter.
         /* handle */ texture_atlas_hanle // your sprite sheet
         /* frame */ Vec2::new(4., 4.) // the length and height of your sprite sheet 
-        /* direction_indexes */ AnimationDirectionIndexes::new(4, 3, 2, 1) // from the example above
+        /* direction_indexes */ AnimationDirectionIndexes::new(4, 3, 2, 1) // the indexes to determine the correct sprite for the direction
         /* repeating */ true // if the animation is repeating or not
         /* blocking */ true, // if the animation should block others
         /* blocking_priority */ 1 // the priority for which animation should block other blocking animations
@@ -99,9 +98,7 @@ fn move_player(
 }
 ```
 
-* **Note** that you can send an event of the same name multiple times even during animation without ruining it
-
-* **Note** if you send an event with a different name the current animation of the entity will change immediately.
+* **Note** that you can send an event of the same name multiple times even while an animation is in progress without ruining it
 
 * **Note** an animation that has been sent will animate till end or repeat forever
 
@@ -120,25 +117,27 @@ fn move_player(
     event_writer.send(AnimationEvent("player_running", entity));
 }
 ```
+* **Note** if you send an event with a different name the current animation of the entity will change immediately unless the current animation is blocking or has a higher priority.
 
 #### Knowing this you can change the `player_running` animation to `player_die` in another system where you could check collisions like this
 ```rust
 fn check_collisions(
     mut commands: Commands,
     rapier_context: Res<RapierContext> // great 2d physics engine for lots of things we are using it for collision detection
-    mut event_writer: EventWriter<AnimationEvent>
+    mut event_writer: EventWriter<AnimationEvent>,
+    player_query: Query<Entity, With<Player>>,
+    bullet_query: Query<Entity, With<Bullet>>
 ) {
-    for pair in rapier_context.contact_pairs() {
-        if pair.has_any_active_contacts() {
+    let player_entity = player_query.single();
 
-            let entity = pair.collider1();
-            
+    for bullet_entity in bullet_query.iter() {
+        if let Some(_) = context.contact_pair(bullet_entity, player_entity) {
             // send the event for the animating entity
             event_writer.send(AnimationEvent("player_die", entity));
             // despawn the entity after death
-            commands.entity(entity).despawn();
-            return;
-        }
+            commands.entity(player_entity).despawn();
+            commands.entity(bullet_entity).despawn();
+        }         
     }
 }
 ```
