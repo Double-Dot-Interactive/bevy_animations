@@ -104,11 +104,16 @@ impl TimedAnimation {
         Some(())
     }
 
-    pub fn reset_animation(&mut self) {
+    pub fn reset_animation(&mut self, sprite: Option<Mut<TextureAtlasSprite>>, direction: Option<&AnimationDirection>) {
         self.animation_tick = 1;
         let new_dur = Duration::from_secs_f32(*self.frame_timings_in_secs.get(0).expect("Error With Animation Timing"));
         self.animation_timer.set_duration(new_dur);
         self.animation_timer.reset();
+        if let (Some(mut sprite), Some(direction)) = (sprite, direction) {
+            let x_index = self.get_x_index().expect("Something Went Wrong Reseting Animation");
+            let y_index = self.get_y_index(direction);
+            sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+        }
     }
 
     fn get_y_index(&self, direction: &AnimationDirection) -> usize {
@@ -254,9 +259,14 @@ impl TransformAnimation {
         }
     }
 
-    pub fn reset_animation(&mut self) {
+    pub fn reset_animation(&mut self, sprite: Option<Mut<TextureAtlasSprite>>, direction: Option<&AnimationDirection>) {
         self.animation_tick = 1;
-    }   
+        if let (Some(mut sprite), Some(direction)) = (sprite, direction) {
+            let x_index = self.get_x_index().expect("Something Went Wrong Reseting Animation");
+            let y_index = self.get_y_index(direction);
+            sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+        }
+    } 
 }
 
 /// This Is Primarily For Animations on objects, for example doors to open and close
@@ -320,11 +330,15 @@ impl LinearTimedAnimation {
         Some(())
     }
 
-    pub fn reset_animation(&mut self) {
+    pub fn reset_animation(&mut self, mut sprite: Option<Mut<TextureAtlasSprite>>) {
         self.animation_tick = 1;
         let new_dur = Duration::from_secs_f32(*self.frame_timings_in_secs.get(0).expect("Error With Animation Timing"));
         self.animation_timer.set_duration(new_dur);
         self.animation_timer.reset();
+        if let Some(mut sprite) = sprite {
+            let x_index = self.get_x_index().expect("Something Went Wrong Reseting Animation");
+            sprite.index = x_index
+        }
     }
 }
 

@@ -1,4 +1,3 @@
-use crate::animations::*;
 use crate::*;
 
 pub type AnimationName = &'static str;
@@ -118,15 +117,60 @@ impl AnimationType {
     }
     pub fn reset_animation(&mut self) {
         match self {
-            AnimationType::Timed(animation, _) => animation.reset_animation(),
-            AnimationType::Transform(animation, _) => animation.reset_animation(),
-            AnimationType::LinearTimed(animation, _) => animation.reset_animation(),
+            AnimationType::Timed(animation, _) => animation.reset_animation(None, None),
+            AnimationType::Transform(animation, _) => animation.reset_animation(None, None),
+            AnimationType::LinearTimed(animation, _) => animation.reset_animation(None),
         }
     }
 }
 
+/// Send a request to animate the `Entity` with the animation dictated by the `AnimationName`
+/// 
+/// # Example
+/// ```rust
+/// use bevy::prelude::*;
+/// use bevy_animations::*;
+/// 
+/// fn move_player(
+///     player_query: Query<(&Transform Entity), With<Player>>,
+///     mut animation_event_writer: EventWriter<AnimationEvent>
+/// ) {
+///     let (mut transform, player_entity) = player_query.single_mut();    
+/// 
+///     /* you move logic here... */
+/// 
+///     animation_event_writer.send(AnimationEvent("player_running", player_entity));
+/// }
+/// ```
+/// 
+/// * **Note** that you can send an event of the same name multiple times even while an animation is in progress without ruining it
+///
+/// * **Note** an animation that has been sent will animate till end or repeat forever
 #[derive(Debug)]
-pub struct AnimationEvent(pub &'static str, pub Entity);
+pub struct AnimationEvent(pub AnimationName, pub Entity);
+
+/// Send a request to reset the animation of an `Entity`
+/// 
+/// # Example
+/// ```rust
+/// use bevy::prelude::*;
+/// use bevy_animations::*;
+/// 
+/// fn move_player(
+///     player_query: Query<(&Transform Entity), With<Player>>,
+///     mut reset_animation_event_writer: EventWriter<ResetAnimationEvent>
+/// ) {
+///     let (mut transform, player_entity) = player_query.single_mut();    
+/// 
+///     /* you move logic here... */
+/// 
+///     reset_animation_event_writer.send(ResetAnimationEvent(player_entity));
+/// }
+/// ```
+/// 
+/// * **Note** this will overwrite an animation request in the same frame
+#[derive(Debug)]
+pub struct ResetAnimationEvent(pub Entity);
 
 #[derive(Debug, PartialEq, Eq, Clone, Default, Component)]
 pub enum AnimationDirection {

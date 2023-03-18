@@ -1,6 +1,6 @@
 [package]
 name = "bevy_animations"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 authors = ["aarongraybill3@gmail.com"]
 description = "2d Game Animation Engine built for Bevy"

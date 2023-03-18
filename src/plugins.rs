@@ -32,11 +32,13 @@ impl Plugin for AnimationsPlugin {
                 pixels_per_meter: self.pixels_per_meter,
             })
             .add_event::<AnimationEvent>()
+            .add_event::<ResetAnimationEvent>()
             .insert_resource(Animations::default())
             .insert_resource(EntitesToRemove::default())
             .add_system_set(SystemSet::new()
-                .with_system(catch_event.label("events").before("remove"))
-                .with_system(remove_entites.label("remove").after("events"))
+                .with_system(catch_animation_event.label("events").before("remove"))
+                .with_system(catch_reset_events.label("reset").after("events"))
+                .with_system(remove_entites.label("remove").after("reset"))
             );
     }
 }
@@ -44,7 +46,7 @@ impl Plugin for AnimationsPlugin {
 /// Main System That Checks for Incoming events
 /// If any incoming events are found they are checked to make sure they are new and if they are the Handle<TextureAtlas> is changed for the entity
 /// After checking the events. All the [`AnimatingEntities`](crate::AnimatingEntities) have their current animations cycled
-fn catch_event(
+fn catch_animation_event(
     time: Res<Time>,
     mut query: Query<(
         &mut Handle<TextureAtlas>,
@@ -66,8 +68,8 @@ fn catch_event(
             Ok(handle) => handle,
             Err(_) => {
                 // if we didn't find the entity from the query it doesn't exist anymore and should be removed via the remove_entites system
-                entities_to_remove.0.push(event.1); 
-                continue
+                entities_to_remove.0.push(event.1);
+                continue;
             }
         };
         // if incoming event is new 
@@ -165,6 +167,50 @@ fn catch_event(
         else {
             panic!("Something Went Terribly Wrong Animating {} Check Your Configurations", curr_animation.get_name());
         } 
+    }
+}
+
+fn catch_reset_events(
+    mut query: Query<(
+        &mut TextureAtlasSprite,
+        &AnimationDirection
+    )>,
+    mut animations: ResMut<Animations>,
+    mut entities_to_remove: ResMut<EntitesToRemove>,
+    mut animation_events: EventReader<ResetAnimationEvent>
+) {
+    for event in animation_events.iter() {
+        // if the entity wasn't found in the query we want to remove it from our data structure
+        let (mut sprite, direction) = match query.get_mut(event.0) {
+            Ok(q) => q,
+            Err(_) => {
+                entities_to_remove.0.push(event.0);
+                continue;
+            }
+        };
+        let mut curr_animation = animations.entities
+            .get_mut(&event.0)
+            .expect("Entity Not Found from `ResetAnimationEvent`")
+            .curr_animation
+            .lock()
+            .unwrap()
+        ;
+        // try and get the current animation
+        // if it is time based
+        if let Some(timed_animation) = curr_animation.timed_animation() {
+            timed_animation.reset_animation(Some(sprite), Some(direction));
+        }
+        // if it is transform based
+        else if let Some(transform_animation) = curr_animation.transform_animation() {
+            transform_animation.reset_animation(Some(sprite), Some(direction));
+        }
+        // if it is lineartime based
+        else if let Some(linear_timed_animation) = curr_animation.linear_timed_animation() {
+            linear_timed_animation.reset_animation(Some(sprite));
+        }
+        else {
+            panic!("Something went terribly wrong getting the current animation");
+        }
     }
 }
 
