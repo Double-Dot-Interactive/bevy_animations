@@ -6,8 +6,8 @@ authors = ["aarongraybill3@gmail.com"]
 description = "2d Game Animation Engine built for Bevy"
 license = "MIT OR Apache-2.0"
 keywords = ["gamedev", "graphics", "bevy", "animations"]
-homepage = "https://github.com/y0Phoenix/bevy_animations"
-repository = "https://github.com/y0Phoenix/bevy_animations.git"
+homepage = "https://github.com/Double-Dot-Interactive/bevy_animations"
+repository = "https://github.com/Double-Dot-Interactive/bevy_animations.git"
 readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
