@@ -221,7 +221,6 @@ fn remove_entites(
     mut entities_to_remove: ResMut<EntitesToRemove>
 ) {
     for entity in entities_to_remove.0.iter() {
-        println!("removing {:?}", entity);
         animations.entities.remove(&entity);
     }
     entities_to_remove.0.clear();
