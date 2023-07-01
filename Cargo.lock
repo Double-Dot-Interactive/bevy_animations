@@ -305,7 +305,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_animations"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "bevy",
  "bevy_animations_macros",

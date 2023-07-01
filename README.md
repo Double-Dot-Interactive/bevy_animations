@@ -149,5 +149,11 @@ fn check_collisions(
 
 * **Note** there is no functionality internally yet for doing a task like despawning an entity only after an animation is finished. This can be accomplished on your own however.
 
+### Versioning
+| bevy  | bevy_animations  |
+| ----- | ---------------  |
+| 0.10+ | 0.3+             |
+| 0.9+  | 0.2+             |
+ 
 ### Open Source
 bevy_animations is open-source forever. You can contribute via the [`GitHub Repo`](https://github.com/y0Phoenix/bevy_animations)
