@@ -22,7 +22,7 @@ fn main() {
 
 ### How bevy_animations animations work
 * specified timings or `meters_per_frame` for each frame
-* user defining which y indexes are left, right, up and down facing sprites
+* user defining which y indexes are left, right, up and down facing sprites or if the sprites should be flipped instead
 * timed animations can block others from happening
 * utilizing a priortity based system so you can define multiple ***blocking*** animations with different priorities to render
 
@@ -64,7 +64,12 @@ animations.insert_animation(
             /* meters_per_frame */ 0.55 // your desired meters per frame
             /* handle */ texture_atlas_hanle // your sprite sheet
             /* frame */ Vec2::new(4., 4.) // the length and height of your sprite sheet
-            /* direction_indexes */ AnimationDirectionIndexes::new(4, 3, 2, 1) // the indexes to determine the correct sprite for the direction
+            /* direction_indexes */ AnimationDirectionIndexes::IndexBased(IndexBasedDirection { 
+                left: 1,
+                right: 1,
+                up: 1,
+                down: 1 
+            }), // the indexes to determine the correct sprite for the direction
             /* repeating */ true // if the animation is repeating or not
         )
     ),
@@ -72,6 +77,8 @@ animations.insert_animation(
 )
 ```
 **Note** if you have a one directional animation you can use `AnimationDirectionIndexes::default()` or set everything to 1 `AnimationDirectionIndexes::new(1, 1, 1, 1)`
+
+**Note** it is on you to make sure you are passing the correct strings to bevy_animations to animate your entity
 
 #### You can also add a `TimedAnimation` like this
 ```rust
@@ -81,7 +88,12 @@ animations.insert_animation(entity.id(), AnimationType::Timed(
         /* frame_timings_in_secs */ vec![0.001, 0.300, 0.300, 0.250], // Note that the the first timing is set to 0.001 so the animation starts immediately. If this value doesn't suit your needs, you can change it to another parameter.
         /* handle */ texture_atlas_hanle // your sprite sheet
         /* frame */ Vec2::new(4., 4.) // the length and height of your sprite sheet 
-        /* direction_indexes */ AnimationDirectionIndexes::new(4, 3, 2, 1) // the indexes to determine the correct sprite for the direction
+        /* direction_indexes */ AnimationDirectionIndexes::IndexBased(IndexBasedDirection { 
+                left: 1,
+                right: 1,
+                up: 1,
+                down: 1 
+        }), // the indexes to determine the correct sprite for the direction
         /* repeating */ true // if the animation is repeating or not
         /* blocking */ true, // if the animation should block others
         /* blocking_priority */ 1 // the priority for which animation should block other blocking animations
@@ -93,7 +105,8 @@ animations.insert_animation(entity.id(), AnimationType::Timed(
 #### We can then start an animation by sending it over an `EventWriter<AnimationEvent>` like this
 ```rust
 fn move_player(
-    mut event_writer: EventWriter<AnimationEvent>
+    mut event_writer: EventWriter<AnimationEvent>,
+    player_query: Query<Entity, With<Player>>
 ) {
     // your move logic here...
 
@@ -152,8 +165,12 @@ fn check_collisions(
 ### Versioning
 | bevy  | bevy_animations  |
 | ----- | ---------------  |
-| 0.10+ | 0.3+             |
-| 0.9+  | 0.2+             |
+| 0.10.x | 0.3.x             |
+| 0.9.x  | 0.2.x             |
+
+### More Documentation
+If you need more in depth Documentation and more examples for all of the current implementations visit the
+[api docs](https://docs.rs/bevy_animations/0.3.1/bevy_animations/)
  
 ### Open Source
 bevy_animations is open-source forever. You can contribute via the [`GitHub Repo`](https://github.com/y0Phoenix/bevy_animations)
