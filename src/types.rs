@@ -52,23 +52,51 @@ pub type AnimationName = &'static str;
 /// ```
 /// 
 /// **Note** how the `animation_frames` field from the animation definition above is 0th index based
-#[derive(Clone, Debug)]
-pub struct AnimationDirectionIndexes {
-    pub left: usize,
-    pub right: usize,
-    pub up: usize,
-    pub down: usize,
+#[derive(Clone, Debug, Copy)]
+pub enum AnimationDirectionIndexes {
+    IndexBased(IndexBasedDirection),
+    FlipBased(FlipBasedDirection)
 }
 
-impl AnimationDirectionIndexes {
-    pub fn new(left: usize, right: usize, up: usize, down: usize) -> Self{
-        Self { left, right, up, down }
-    }
+#[derive(Debug, Clone, Copy)]
+pub struct FlipBasedDirection {
+    // /// To Determine if the Sprite Should be FLipped
+    // pub is_flipped: bool,
+    /// To Determine if the Left Facing Sprites are Left Facing When Flipped or Not 
+    pub left_direction_is_flipped: bool,
+    /// To Determine which Index the Horizontal Directions Sprites are
+    pub x_direction_index: usize,
+
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct IndexBasedDirection {
+    /// The Y index on the Sprite Sheet for Left Facing Sprites
+    pub left: usize,
+    /// The Y index on the Sprite Sheet for Right Facing Sprites
+    pub right: usize,
+    /// The Y index on the Sprite Sheet for Upward Facing Sprites
+    pub up: usize,
+    /// The Y index on the Sprite Sheet for Downward Facing Sprites
+    pub down: usize,
+
+}
+
+/// Used to be a sortof Option type for getting the y-index of a sprite on a sprite sheet
+pub enum YIndex {
+    Index(usize),
+    Flip(bool, usize)
+}
+
+// impl AnimationDirectionIndexes {
+//     pub fn new(left: usize, right: usize, up: usize, down: usize) -> Self{
+//         Self { left, right, up, down }
+//     }
+// }
 
 impl Default for AnimationDirectionIndexes {
     fn default() -> Self {
-        Self { left: 1, right: 1, up: 1, down: 1 }
+        Self::IndexBased(IndexBasedDirection { left: 1, right: 1, up: 1, down: 1 }) 
     }
 }
 

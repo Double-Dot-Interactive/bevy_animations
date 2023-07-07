@@ -134,7 +134,6 @@ fn catch_animation_event(
         };
         // unlock the current animation once so we don't hit a deadlock
         let mut curr_animation = animation_entity.curr_animation.lock().unwrap();
-        let name = curr_animation.get_name();
 
         // if the current animation wasn't started via an `AnimationEvent`
         if !animation_entity.curr_animation_called {
@@ -146,20 +145,24 @@ fn catch_animation_event(
             if animation_entity.in_blocking_animation {
                 continue;
             }
-            if let None = transform_animation.cycle_animation(sprite, &animation_entity.last_valid_direction, transform, config.pixels_per_meter, name) {
+            if let None = transform_animation.cycle_animation(
+                sprite, 
+                &animation_entity.last_valid_direction, 
+                transform, 
+                config.pixels_per_meter) {
                 animation_entity.curr_animation_called = false;
             }
         } 
         // if our current animation is timed based we should cycle it
         else if let Some(timed_animation) = curr_animation.timed_animation() {
-            if let None = timed_animation.cycle_animation(sprite, &animation_entity.last_valid_direction, time.delta(), name) {
+            if let None = timed_animation.cycle_animation(sprite, &animation_entity.last_valid_direction, time.delta()) {
                 animation_entity.in_blocking_animation = false;
                 animation_entity.curr_animation_called = false;
             }
         }
         // if the current animation is linear time based we should cycle it
         else if let Some(linear_timed_animation) = curr_animation.linear_timed_animation() {
-            if let None = linear_timed_animation.cycle_animation(sprite, time.delta(), name) {
+            if let None = linear_timed_animation.cycle_animation(sprite, time.delta()) {
                 animation_entity.in_blocking_animation = false;
                 animation_entity.curr_animation_called = false;
             }
@@ -182,7 +185,7 @@ fn catch_reset_events(
 ) {
     for event in animation_events.iter() {
         // if the entity wasn't found in the query we want to remove it from our data structure
-        let (mut sprite, direction) = match query.get_mut(event.0) {
+        let (sprite, direction) = match query.get_mut(event.0) {
             Ok(q) => q,
             Err(_) => {
                 entities_to_remove.0.push(event.0);

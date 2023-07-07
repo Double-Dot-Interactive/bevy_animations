@@ -78,13 +78,28 @@ impl TimedAnimation {
             Some(index) => index,
             None => 0,
         };
-        let y_index = self.get_y_index(direction);
-        (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+
+        match self.get_y_index(direction) {
+            YIndex::Index(y_index) => {
+                info!("{y_index} {x_index}");
+                (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+            },
+            YIndex::Flip(_, y_index) => {
+                info!("{y_index} {x_index}");
+                (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+            },
+        }
     }
 
-    pub fn cycle_animation(&mut self, mut sprite: Mut<TextureAtlasSprite>, direction: &AnimationDirection, delta: Duration, name: &'static str) -> Option<()> {
+    pub fn cycle_animation(&mut self, mut sprite: Mut<TextureAtlasSprite>, direction: &AnimationDirection, delta: Duration) -> Option<()> {
         if self.ready_to_animate(delta) {
-            let y_index = self.get_y_index(direction);
+            let y_index = match self.get_y_index(direction) {
+                YIndex::Index(y_index) => y_index,
+                YIndex::Flip(flipped, y_index) => {
+                    sprite.flip_x = flipped;
+                    y_index
+                },
+            };
             self.previous_dir_index = y_index;
             let x_index = match self.get_x_index() {
                 Some(index) => index,
@@ -111,20 +126,41 @@ impl TimedAnimation {
         self.animation_timer.reset();
         if let (Some(mut sprite), Some(direction)) = (sprite, direction) {
             let x_index = self.get_x_index().expect("Something Went Wrong Reseting Animation");
-            let y_index = self.get_y_index(direction);
-            sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+            match self.get_y_index(direction) {
+                YIndex::Index(y_index) => sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index),
+                YIndex::Flip(flip, y_index) => {
+                    sprite.flip_x = flip;
+                    sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+                }
+            }
         }
     }
 
-    fn get_y_index(&self, direction: &AnimationDirection) -> usize {
-        match direction {
-            AnimationDirection::Left => self.direction_indexes.left,
-            AnimationDirection::Right => self.direction_indexes.right,
-            AnimationDirection::Up => self.direction_indexes.up,
-            AnimationDirection::Down => self.direction_indexes.down,
-            AnimationDirection::Still => self.previous_dir_index
+    #[allow(unused)]
+    fn get_y_index(&self, direction: &AnimationDirection) -> YIndex {
+        match (direction, self.direction_indexes) {
+            (AnimationDirection::Left,
+             AnimationDirectionIndexes::IndexBased(index)) => YIndex::Index(index.left),
+            (AnimationDirection::Right,
+             AnimationDirectionIndexes::IndexBased(index)) => YIndex::Index(index.right),
+            (AnimationDirection::Up,
+             AnimationDirectionIndexes::IndexBased(index)) => YIndex::Index(index.up),
+            (AnimationDirection::Down,
+             AnimationDirectionIndexes::IndexBased(index)) => YIndex::Index(index.down),
+            (AnimationDirection::Left, 
+             AnimationDirectionIndexes::FlipBased(index)) => YIndex::Flip(
+                 index.left_direction_is_flipped,
+                 index.x_direction_index),
+            (AnimationDirection::Right,
+             AnimationDirectionIndexes::FlipBased(index)) => YIndex::Flip(
+                 !index.left_direction_is_flipped,
+                 index.x_direction_index),
+            (AnimationDirection::Still, _) => YIndex::Index(self.previous_dir_index),
+            (_, _) => YIndex::Index(1)
         }
     }
+
+    #[allow(unused)]
     fn is_out_of_bounds(&self, sprite: &Mut<TextureAtlasSprite>, index: usize) -> bool {
         if sprite.field_len() <= index {
             return true;
@@ -187,7 +223,11 @@ impl TransformAnimation {
             Some(index) => index,
             None => 0,
         };
-        let y_index = self.get_y_index(direction);
+        let y_index = match self.get_y_index(direction){
+            YIndex::Index(y_index) => y_index,
+            YIndex::Flip(_, y_index) => y_index,
+        };
+        info!("{x_index} {y_index}");
         (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
     }
 
@@ -197,9 +237,12 @@ impl TransformAnimation {
         direction: &AnimationDirection, 
         transform: Mut<Transform>,
         pixels_per_meter: f32,
-        name: &'static str
+        // name: &'static str
     ) -> Option<()> {
-        let y_index = self.get_y_index(direction);
+        let y_index = match self.get_y_index(direction) {
+            YIndex::Index(y_index) => y_index,
+            YIndex::Flip(_, y_index) => y_index
+        };
         if self.ready_to_animate(&transform, pixels_per_meter) || y_index != self.previous_dir_index {
             self.previous_transform = transform.clone();
             let x_index = match self.get_x_index() {
@@ -207,7 +250,13 @@ impl TransformAnimation {
                 None => return None
             };
 
-            let y_index = self.get_y_index(direction);
+            let y_index = match self.get_y_index(direction) {
+                YIndex::Index(y_index) => y_index,
+                YIndex::Flip(flipped, y_index) => {
+                    sprite.flip_x = flipped;
+                    y_index
+                }
+            };
 
             self.previous_dir_index = y_index;
 
@@ -249,22 +298,43 @@ impl TransformAnimation {
             };
         }
     }
-    fn get_y_index(&self, direction: &AnimationDirection) -> usize {
-        match direction {
-            AnimationDirection::Left => self.direction_indexes.left,
-            AnimationDirection::Right => self.direction_indexes.right,
-            AnimationDirection::Up => self.direction_indexes.up,
-            AnimationDirection::Down => self.direction_indexes.down,
-            AnimationDirection::Still => self.previous_dir_index
+
+    #[allow(unused)]
+    fn get_y_index(&self, direction: &AnimationDirection) -> YIndex {
+        match (direction, self.direction_indexes) {
+            (AnimationDirection::Left,
+             AnimationDirectionIndexes::IndexBased(index)) => YIndex::Index(index.left),
+            (AnimationDirection::Right,
+             AnimationDirectionIndexes::IndexBased(index)) => YIndex::Index(index.right),
+            (AnimationDirection::Up,
+             AnimationDirectionIndexes::IndexBased(index)) => YIndex::Index(index.up),
+            (AnimationDirection::Down,
+             AnimationDirectionIndexes::IndexBased(index)) => YIndex::Index(index.down),
+            (AnimationDirection::Left, 
+             AnimationDirectionIndexes::FlipBased(index)) => YIndex::Flip(
+                 index.left_direction_is_flipped,
+                 index.x_direction_index),
+            (AnimationDirection::Right,
+             AnimationDirectionIndexes::FlipBased(index)) => YIndex::Flip(
+                 !index.left_direction_is_flipped,
+                 index.x_direction_index),
+            (AnimationDirection::Still, _) => YIndex::Index(self.previous_dir_index),
+            (_, _) => YIndex::Index(1)
         }
     }
 
+    
     pub fn reset_animation(&mut self, sprite: Option<Mut<TextureAtlasSprite>>, direction: Option<&AnimationDirection>) {
         self.animation_tick = 1;
         if let (Some(mut sprite), Some(direction)) = (sprite, direction) {
             let x_index = self.get_x_index().expect("Something Went Wrong Reseting Animation");
-            let y_index = self.get_y_index(direction);
-            sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+            match self.get_y_index(direction) {
+                YIndex::Index(y_index) => sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index),
+                YIndex::Flip(flip, y_index) => {
+                    sprite.flip_x = flip;
+                    sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+                }
+            }
         }
     } 
 }
@@ -309,7 +379,7 @@ impl LinearTimedAnimation {
         }
     }
 
-    pub fn cycle_animation(&mut self, mut sprite: Mut<TextureAtlasSprite>, delta: Duration, name: &'static str) -> Option<()> {
+    pub fn cycle_animation(&mut self, mut sprite: Mut<TextureAtlasSprite>, delta: Duration) -> Option<()> {
         self.animation_timer.tick(delta);
         if self.animation_timer.finished() {
             let x_index = match self.get_x_index() {
@@ -330,6 +400,7 @@ impl LinearTimedAnimation {
         Some(())
     }
 
+    #[allow(unused)]
     pub fn reset_animation(&mut self, mut sprite: Option<Mut<TextureAtlasSprite>>) {
         self.animation_tick = 1;
         let new_dur = Duration::from_secs_f32(*self.frame_timings_in_secs.get(0).expect("Error With Animation Timing"));
@@ -357,6 +428,7 @@ pub struct LinearTransformAnimation {
     pub direction_indexes: AnimationDirectionIndexes
 }
 
+#[allow(unused)]
 impl LinearTransformAnimation {
     fn new(
         animation_frames: Vec<usize>,
@@ -391,13 +463,27 @@ impl LinearTransformAnimation {
         false
     }
 
-    fn get_y_index(&self, direction: &AnimationDirection) -> usize {
-        match direction {
-            AnimationDirection::Left => self.direction_indexes.left,
-            AnimationDirection::Right => self.direction_indexes.right,
-            AnimationDirection::Up => self.direction_indexes.up,
-            AnimationDirection::Down => self.direction_indexes.down,
-            AnimationDirection::Still => self.previous_dir_index
+    #[allow(unused)]
+    fn get_y_index(&self, direction: &AnimationDirection) -> YIndex {
+        match (direction, self.direction_indexes) {
+            (AnimationDirection::Left,
+             AnimationDirectionIndexes::IndexBased(index)) => YIndex::Index(index.left),
+            (AnimationDirection::Right,
+             AnimationDirectionIndexes::IndexBased(index)) => YIndex::Index(index.right),
+            (AnimationDirection::Up,
+             AnimationDirectionIndexes::IndexBased(index)) => YIndex::Index(index.up),
+            (AnimationDirection::Down,
+             AnimationDirectionIndexes::IndexBased(index)) => YIndex::Index(index.down),
+            (AnimationDirection::Left, 
+             AnimationDirectionIndexes::FlipBased(index)) => YIndex::Flip(
+                 index.left_direction_is_flipped,
+                 index.x_direction_index),
+            (AnimationDirection::Right,
+             AnimationDirectionIndexes::FlipBased(index)) => YIndex::Flip(
+                 !index.left_direction_is_flipped,
+                 index.x_direction_index),
+            (AnimationDirection::Still, _) => YIndex::Index(self.previous_dir_index),
+            (_, _) => YIndex::Index(1)
         }
     }
 
@@ -406,7 +492,10 @@ impl LinearTransformAnimation {
             Some(index) => index,
             None => return None,
         };
-        let y_index = self.get_y_index(direction);
+        let y_index = match self.get_y_index(direction) {
+            YIndex::Index(y_index) => y_index,
+            YIndex::Flip(_, y_index) => y_index,
+        };
         Some((y_index * self.frame.y as usize) - (self.frame.x as usize - x_index))
     }
 
@@ -431,7 +520,13 @@ impl LinearTransformAnimation {
                 None => return
             };
 
-            let y_index = self.get_y_index(direction);
+            let y_index = match self.get_y_index(direction) {
+                YIndex::Index(y_index) => y_index,
+                YIndex::Flip(flipped, y_index) => {
+                    sprite.flip_x = flipped;
+                    y_index
+                }
+            };
 
             self.previous_dir_index = y_index;
 
@@ -440,7 +535,7 @@ impl LinearTransformAnimation {
 
             sprite.index = index;
 
-            self.animation_tick += 1;            
+            self.animation_tick += 1;
         }
         else if *direction == AnimationDirection::Still {
             let x_index = self.animation_frames.get(0).unwrap();
