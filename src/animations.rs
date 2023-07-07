@@ -1,6 +1,49 @@
 use crate::*;
 
-// This is Primarily for This Is Primarily For Animations on players or NPCs, for example shooting a bow or reloading a gun 
+/// This is Primarily for This Is Primarily For Animations on players or NPCs, for example shooting a bow or reloading a gun 
+///
+/// /// # Example
+/// ```rust
+///        fn init_animation(
+///            mut animations: ResMut<Animations>,
+///            mut commands: Commands,
+///            asset_server: ResMut<AssetServer>,
+///            mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+///            ) {
+///            let asset = asset_server.load("path/to/your/sprite_sheet");
+///
+///            let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
+///
+///            let texture_atlas_handle = texture_atlases.add(texture_atlas);
+///
+///            let entity = commands.spawn(AnimationDirection::default())
+///                .insert(SpriteSheetBundle {
+///                    texture_atlas: texture_atlas_handle.clone(),
+///                    ..Default::default()
+///                }).id();
+///            animations.insert_animation(
+///                entity, // the entity is needed to determine which `Handle<TextureAtlas>` is being manipulated
+///                AnimationType::Timed(
+///                    TimedAnimation::new(
+///                        /* animation_frames */ vec![0, 1, 2, 3], // the x index for your frames to cycle through
+///                        /* frame_timings_in_secs */ vec![0.001, 0.5, 0.5, 0.5] // Note that the the first timing is set to 0.001 so the animation starts immediately. If this value doesn't suit your needs, you can change it to another parameter.
+///                        /* handle */ texture_atlas_handle, // your sprite sheet
+///                        /* frame */ Vec2::new(4., 4.), // the length and height of your sprite sheet
+///                        /* direction_indexes */ AnimationDirectionIndexes::IndexBased(IndexBasedDirection { 
+///                            left: 1,
+///                            right: 1,
+///                            up: 1,
+///                            down: 1 
+///                        }), // the indexes to determine the correct sprite for the direction
+///                        /* repeating */ true, // if the animation is repeating or not
+///                        /* blocking */ false, // if the animation should block others
+///                        /* blocking_priority */ 1 // the blocking_priority hierarchy assignment to determine which animations should block eachother
+///                    ),
+///                    "player_running" // the name of the animation. will be used when sending an `AnimationEvent`
+///                )
+///           );
+///       }
+/// ```
 #[derive(Clone, Debug, Default)]
 pub struct TimedAnimation {
     animation_tick: usize,
@@ -171,6 +214,49 @@ impl TimedAnimation {
 
 
 /// This Is Primarily For Animations on players or NPCs, for example walking or running
+///
+/// # Example
+///
+/// ```rust
+///        fn init_animation(
+///            mut animations: ResMut<Animations>,
+///            mut commands: Commands,
+///            asset_server: ResMut<AssetServer>,
+///            mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+///            ) {
+///            let asset = asset_server.load("path/to/your/sprite_sheet");
+///
+///            let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
+///
+///            let texture_atlas_handle = texture_atlases.add(texture_atlas);
+///
+///            let entity = commands.spawn(AnimationDirection::default())
+///                .insert(SpriteSheetBundle {
+///                    texture_atlas: texture_atlas_handle.clone(),
+///                    ..Default::default()
+///                }).id();
+///            animations.insert_animation(
+///                entity, // the entity is needed to determine which `Handle<TextureAtlas>` is being manipulated
+///                AnimationType::Transform(
+///                    TransformAnimation::new(
+///                        /* animation_frames */ vec![0, 1, 2, 3], // the x index for your frames to cycle through
+///                        /* meters_per_frame */ 0.55, // your desired meters per frame
+///                        /* handle */ texture_atlas_handle, // your sprite sheet
+///                        /* frame */ Vec2::new(4., 4.), // the length and height of your sprite sheet
+///                        /* direction_indexes */ AnimationDirectionIndexes::IndexBased(IndexBasedDirection { 
+///                            left: 1,
+///                            right: 1,
+///                            up: 1,
+///                            down: 1 
+///                        }), // the indexes to determine the correct sprite for the direction
+///                        /* repeating */ true, // if the animation is repeating or not
+///                    ),
+///                    "player_running" // the name of the animation. will be used when sending an `AnimationEvent`
+///                )
+///           );
+///       }
+/// ```
+///
 #[derive(Debug, Default, Clone)]
 pub struct TransformAnimation {
     animation_tick: usize,
@@ -342,6 +428,41 @@ impl TransformAnimation {
 /// This Is Primarily For Animations on objects, for example doors to open and close
 /// 
 /// **Note** the sprite sheets for these animations should have 1 column. It's okay if they have more however is't functionally irrelevant
+///
+/// # Example
+/// ```rust
+///        fn init_animation(
+///            mut animations: ResMut<Animations>,
+///            mut commands: Commands,
+///            asset_server: ResMut<AssetServer>,
+///            mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+///            ) {
+///            let asset = asset_server.load("path/to/your/sprite_sheet");
+///
+///            let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
+///
+///            let texture_atlas_handle = texture_atlases.add(texture_atlas);
+///
+///            let entity = commands.spawn(AnimationDirection::default())
+///                .insert(SpriteSheetBundle {
+///                    texture_atlas: texture_atlas_handle.clone(),
+///                    ..Default::default()
+///                }).id();
+///            animations.insert_animation(
+///                entity, // the entity is needed to determine which `Handle<TextureAtlas>` is being manipulated
+///                AnimationType::LinearTimed(
+///                    LinearTimedAnimation::new(
+///                        /* animation_frames */ vec![0, 1, 2, 3], // the x index for your frames to cycle through
+///                        /* frame_timings_in_secs */ vec![0.001, 0.5, 0.5, 0.5] // Note that the the first timing is set to 0.001 so the animation starts immediately. If this value doesn't suit your needs, you can change it to another parameter.
+///                        /* handle */ texture_atlas_handle, // your sprite sheet
+///                        /* frame */ Vec2::new(4., 4.), // the length and height of your sprite sheet
+///                        /* repeating */ true, // if the animation is repeating or not
+///                    ),
+///                    "player_running" // the name of the animation. will be used when sending an `AnimationEvent`
+///                )
+///           );
+///       }
+/// ```
 #[derive(Debug, Default, Clone)]
 pub struct LinearTimedAnimation {
     animation_tick: usize,
@@ -415,6 +536,48 @@ impl LinearTimedAnimation {
 
 
 /// This Is Primarily For Animations on objects, for example a projectile
+///
+/// /// # Example
+///
+/// ```rust
+///        fn init_animation(
+///            mut animations: ResMut<Animations>,
+///            mut commands: Commands,
+///            asset_server: ResMut<AssetServer>,
+///            mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+///            ) {
+///            let asset = asset_server.load("path/to/your/sprite_sheet");
+///
+///            let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
+///
+///            let texture_atlas_handle = texture_atlases.add(texture_atlas);
+///
+///            let entity = commands.spawn(AnimationDirection::default())
+///                .insert(SpriteSheetBundle {
+///                    texture_atlas: texture_atlas_handle.clone(),
+///                    ..Default::default()
+///                }).id();
+///            animations.insert_animation(
+///                entity, // the entity is needed to determine which `Handle<TextureAtlas>` is being manipulated
+///                AnimationType::LinearTransform(
+///                    LinearTransformAnimation::new(
+///                        /* animation_frames */ vec![0, 1, 2, 3], // the x index for your frames to cycle through
+///                        /* meters_per_frame */ 0.55, // your desired meters per frame
+///                        /* handle */ texture_atlas_handle, // your sprite sheet
+///                        /* frame */ Vec2::new(4., 4.), // the length and height of your sprite sheet
+///                        /* direction_indexes */ AnimationDirectionIndexes::IndexBased(IndexBasedDirection { 
+///                            left: 1,
+///                            right: 1,
+///                            up: 1,
+///                            down: 1 
+///                        }), // the indexes to determine the correct sprite for the direction
+///                        /* repeating */ true, // if the animation is repeating or not
+///                    ),
+///                    "player_running" // the name of the animation. will be used when sending an `AnimationEvent`
+///                )
+///           );
+///       }
+/// ```
 #[derive(Debug, Default, Clone)]
 pub struct LinearTransformAnimation {
     animation_tick: usize,
@@ -512,12 +675,12 @@ impl LinearTransformAnimation {
         direction: &AnimationDirection, 
         transform: Mut<Transform>,
         pixels_per_meter: f32
-    ) {
+    ) -> Option<()> {
         if self.ready_to_animate(&transform, pixels_per_meter) {
             self.previous_transform = transform.clone();
             let x_index = match self.get_x_index() {
                 Some(index) => index,
-                None => return
+                None => return None
             };
 
             let y_index = match self.get_y_index(direction) {
@@ -536,6 +699,7 @@ impl LinearTransformAnimation {
             sprite.index = index;
 
             self.animation_tick += 1;
+            return Some(());
         }
         else if *direction == AnimationDirection::Still {
             let x_index = self.animation_frames.get(0).unwrap();
@@ -543,7 +707,9 @@ impl LinearTransformAnimation {
             let y_index = self.previous_dir_index;
 
             sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+            return Some(());
         }
+        Some(())
     }
 
     fn is_out_of_bounds(&self, sprite: &Mut<TextureAtlasSprite>, index: usize) -> bool {
@@ -552,4 +718,18 @@ impl LinearTransformAnimation {
         }
         false
     } 
+
+    pub fn reset_animation(&mut self, sprite: Option<Mut<TextureAtlasSprite>>, direction: Option<&AnimationDirection>) {
+        self.animation_tick = 1;
+        if let (Some(mut sprite), Some(direction)) = (sprite, direction) {
+            let x_index = self.get_x_index().expect("Something Went Wrong Reseting Animation");
+            match self.get_y_index(direction) {
+                YIndex::Index(y_index) => sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index),
+                YIndex::Flip(flip, y_index) => {
+                    sprite.flip_x = flip;
+                    sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+                }
+            }
+        }
+    }
 }

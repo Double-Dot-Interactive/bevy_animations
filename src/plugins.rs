@@ -167,6 +167,16 @@ fn catch_animation_event(
                 animation_entity.curr_animation_called = false;
             }
         }
+        // if the current animation is linear transform based we should cycle it 
+        else if let Some(linear_transform_animation) = curr_animation.linear_transform_animation() {
+            if let None = linear_transform_animation.cycle_animation(
+                sprite,
+                &animation_entity.last_valid_direction,
+                transform,
+                config.pixels_per_meter) {
+                animation_entity.curr_animation_called = false;
+            }
+        }
         // if we get here something bad happened it will most likely never hit as the typing is pretty strong
         else {
             panic!("Something Went Terribly Wrong Animating {} Check Your Configurations", curr_animation.get_name());
@@ -208,9 +218,13 @@ fn catch_reset_events(
         else if let Some(transform_animation) = curr_animation.transform_animation() {
             transform_animation.reset_animation(Some(sprite), Some(direction));
         }
-        // if it is lineartime based
+        // if it is linear time based
         else if let Some(linear_timed_animation) = curr_animation.linear_timed_animation() {
             linear_timed_animation.reset_animation(Some(sprite));
+        }
+        // if it is linear transform based
+        else if let Some(linear_transform_animation) = curr_animation.linear_transform_animation() {
+            linear_transform_animation.reset_animation(Some(sprite), Some(direction));
         }
         else {
             panic!("Something went terribly wrong getting the current animation");

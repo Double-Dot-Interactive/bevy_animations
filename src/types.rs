@@ -58,6 +58,11 @@ pub enum AnimationDirectionIndexes {
     FlipBased(FlipBasedDirection)
 }
 
+/// Used to define the direction index. If you don't have sprites with multiple directions this will
+/// flip them when the `AnimationDirection` changes
+///
+/// **Note** if you have each direction already in a sprite sheet use `IndexBasedDirection` as it
+/// is functionally more proper
 #[derive(Debug, Clone, Copy)]
 pub struct FlipBasedDirection {
     // /// To Determine if the Sprite Should be FLipped
@@ -69,6 +74,10 @@ pub struct FlipBasedDirection {
 
 }
 
+/// Used to define the direction indexes for the animations
+///
+/// **Note** for this functionality to work properly your sprite sheet should be formatted in a certain way
+/// It should have frames for each direction you need as the y index on the grid.
 #[derive(Debug, Clone, Copy)]
 pub struct IndexBasedDirection {
     /// The Y index on the Sprite Sheet for Left Facing Sprites
@@ -107,7 +116,9 @@ pub enum AnimationType {
     /// This Is Primarily For Animations on players or NPCs, for example walking or running
     Transform(TransformAnimation, AnimationName),
     /// This Is Primarily For Animations on objects, for example doors to open and close
-    LinearTimed(LinearTimedAnimation, AnimationName)
+    LinearTimed(LinearTimedAnimation, AnimationName),
+    /// This Is Primarily For Animations on objects, for example a projectile
+    LinearTransform(LinearTransformAnimation, AnimationName),
 }
 
 impl AnimationType {
@@ -116,6 +127,7 @@ impl AnimationType {
             AnimationType::Timed(animation, _) => animation.handle.clone(),
             AnimationType::Transform(animation, _) => animation.handle.clone(),
             AnimationType::LinearTimed(animation, _) => animation.handle.clone(),
+            AnimationType::LinearTransform(animation, _) => animation.handle.clone(),
         }
     }
     pub fn timed_animation(&mut self) -> Option<&mut TimedAnimation> {
@@ -130,6 +142,12 @@ impl AnimationType {
             _ => None
         }
     }
+    pub fn linear_transform_animation(&mut self) -> Option<&mut LinearTransformAnimation> {
+        match self {
+            AnimationType::LinearTransform(linear_transform_animation, _) => Some(linear_transform_animation),
+            _ => None
+        }
+    }
     pub fn transform_animation(&mut self) -> Option<&mut TransformAnimation> {
         match self {
             AnimationType::Transform(transform_animation, _) => Some(transform_animation),
@@ -141,6 +159,7 @@ impl AnimationType {
             AnimationType::Timed(_, name) => &name,
             AnimationType::Transform(_, name) => &name,
             AnimationType::LinearTimed(_, name) => &name,
+            AnimationType::LinearTransform(_, name) => &name,
         }
     }
     pub fn reset_animation(&mut self) {
@@ -148,6 +167,7 @@ impl AnimationType {
             AnimationType::Timed(animation, _) => animation.reset_animation(None, None),
             AnimationType::Transform(animation, _) => animation.reset_animation(None, None),
             AnimationType::LinearTimed(animation, _) => animation.reset_animation(None),
+            AnimationType::LinearTransform(animation, _) => animation.reset_animation(None, None)
         }
     }
 }
