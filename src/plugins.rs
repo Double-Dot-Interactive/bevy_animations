@@ -61,7 +61,7 @@ fn catch_animation_event(
     mut animation_events: EventReader<AnimationEvent>
 ) {
     // our main event loop
-    for event in animation_events.iter() {
+    for event in animation_events.read() {
         // get the animating entity from the entity passed in from our event
         let animating_entity = animations.entities.get_mut(&event.1).expect(format!("Entity Not Found in Map For {} animation make sure your adding every necessary component to the entity i.e `AnimationDirection`", event.0).as_str());
         // query the texture the sprite and the current direction of the entity
@@ -193,7 +193,7 @@ fn catch_reset_events(
     mut entities_to_remove: ResMut<EntitesToRemove>,
     mut animation_events: EventReader<ResetAnimationEvent>
 ) {
-    for event in animation_events.iter() {
+    for event in animation_events.read() {
         // if the entity wasn't found in the query we want to remove it from our data structure
         let (sprite, direction) = match query.get_mut(event.0) {
             Ok(q) => q,

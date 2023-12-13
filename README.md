@@ -165,6 +165,7 @@ fn check_collisions(
 ### Versioning
 | bevy  | bevy_animations  |
 | ----- | ---------------  |
+| 0.12.x | 0.5.x             |
 | 0.11.x | 0.4.x             |
 | 0.10.x | 0.3.x             |
 | 0.9.x  | 0.2.x             |
