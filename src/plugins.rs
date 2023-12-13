@@ -35,7 +35,7 @@ impl Plugin for AnimationsPlugin {
             .add_event::<ResetAnimationEvent>()
             .insert_resource(Animations::default())
             .insert_resource(EntitesToRemove::default())
-            .add_systems((
+            .add_systems(Update, (
                 catch_animation_event,
                 catch_reset_events,
                 remove_entites

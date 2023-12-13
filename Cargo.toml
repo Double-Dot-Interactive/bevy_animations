@@ -1,6 +1,6 @@
 [package]
 name = "bevy_animations"
-version = "0.3.2"
+version = "0.4.1"
 edition = "2021"
 authors = ["aarongraybill3@gmail.com"]
 description = "2d Game Animation Engine built for Bevy"
@@ -13,7 +13,7 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.10.1"
+bevy = "0.11.3"
 
 [lib]
 path = "src/lib.rs"
