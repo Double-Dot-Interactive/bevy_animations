@@ -305,20 +305,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_animations"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "bevy",
- "bevy_animations_macros",
-]
-
-[[package]]
-name = "bevy_animations_macros"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c6da682c4bd0543dcf0957c2fde21255861ba847559498b10cf52691ad8527e"
-dependencies = [
- "quote",
- "syn",
 ]
 
 [[package]]

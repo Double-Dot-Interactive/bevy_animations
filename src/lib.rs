@@ -1,6 +1,6 @@
 use std::{collections::HashMap, time::Duration, sync::{Arc, Mutex}};
 
-use bevy::{prelude::*};
+use bevy::prelude::*;
 
 mod animations;
 mod plugins;
@@ -79,6 +79,18 @@ impl Animations {
         match self.entities.get(&entity) {
             // this is functionally the same as checking if the entity is in an animation
             Some(animating_entity) => Some(animating_entity.curr_animation_called),
+            None => None
+        }
+    }
+    /// returns Some(bool) if the entity exists and Some(true) if the entity is in the animation specified
+    /// 
+    /// returns None if the entity was not found 
+    /// 
+    /// useful for determining for example whether or not to initate another animation
+    pub fn doing_animations(&self, entity: Entity, animation_name: AnimationName) -> Option<bool> {
+        match self.entities.get(&entity) {
+            // this is functionally the same as checking if the entity is in an animation
+            Some(animating_entity) => Some(animating_entity.curr_animation_called && animating_entity.curr_animation.lock().unwrap().get_name() == animation_name),
             None => None
         }
     }

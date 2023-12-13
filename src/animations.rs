@@ -2,7 +2,7 @@ use crate::*;
 
 /// This is Primarily for This Is Primarily For Animations on players or NPCs, for example shooting a bow or reloading a gun
 ///
-/// /// # Example
+/// # Example
 /// ```rust
 ///        fn init_animation(
 ///            mut animations: ResMut<Animations>,
