@@ -194,7 +194,7 @@ impl AnimationType {
 /// * **Note** that you can send an event of the same name multiple times even while an animation is in progress without ruining it
 ///
 /// * **Note** an animation that has been sent will animate till end or repeat forever
-#[derive(Debug)]
+#[derive(Debug, Event)]
 pub struct AnimationEvent(pub AnimationName, pub Entity);
 
 /// Send a request to reset the animation of an `Entity`
@@ -217,7 +217,7 @@ pub struct AnimationEvent(pub AnimationName, pub Entity);
 /// ```
 /// 
 /// * **Note** this will overwrite an animation request in the same frame
-#[derive(Debug)]
+#[derive(Debug, Event)]
 pub struct ResetAnimationEvent(pub Entity);
 
 #[derive(Debug, PartialEq, Eq, Clone, Default, Component)]
