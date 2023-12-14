@@ -36,7 +36,7 @@ impl Plugin for AnimationsPlugin {
             .add_event::<FXAnimationEvent>()
             .insert_resource(Animations::default())
             .insert_resource(EntitesToRemove::default())
-            .add_systems((
+            .add_systems(Update, (
                 catch_fx_animation_events,
                 catch_animation_events,
                 catch_reset_events,
