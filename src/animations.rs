@@ -586,7 +586,7 @@ impl LinearTimedAnimation {
 
 /// This Is Primarily For Animations on objects, for example a projectile
 ///
-/// /// # Example
+/// # Example
 ///
 /// ```rust
 ///        fn init_animation(
@@ -794,6 +794,44 @@ impl LinearTransformAnimation {
 }
 
 /// Single Frame Animations. These are easy versatile animations to add to any entity or FX animation 
+/// 
+/// # Example
+/// ```rust
+///        fn init_animation(
+///            mut animations: ResMut<Animations>,
+///            mut commands: Commands,
+///            asset_server: ResMut<AssetServer>,
+///            mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+///            ) {
+///            let asset = asset_server.load("path/to/your/sprite_sheet");
+///
+///            let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
+///
+///            let texture_atlas_handle = texture_atlases.add(texture_atlas);
+///
+///            let entity = commands.spawn(AnimationDirection::default())
+///                .insert(SpriteSheetBundle {
+///                    texture_atlas: texture_atlas_handle.clone(),
+///                    ..Default::default()
+///                }).id();
+///            animations.insert_animation(
+///                entity, // the entity is needed to determine which `Handle<TextureAtlas>` is being manipulated
+///                AnimationType::SingleFrame(
+///                    SingleFrameAnimation::new(
+///                        /* blocking */ true, // if the animation should block others
+///                        /* blocking_priority */ 1, // the priority at which it will block other blocking animations
+///                        /* blocking_duration_in_sec */ 0.15, // the duration of the blocking timer because a single frame animation doesn't have timed frames
+///                        /* direction_indexes */ AnimationDirectionIndexes::IndexBased(FlipBased {
+///                            x_direction_is_flipped: true, // if the left direction is a flipped sprite
+///                            x_direction_index: 0, // to Determine which Index the Horizontal Directions Sprites are 
+///                        }), // the indexes to determine the correct sprite for the direction
+///                        /* repeating */ true, // if the animation is repeating or not
+///                    ),
+///                    "player_fall" // the name of the animation. will be used when sending an `AnimationEvent`
+///                )
+///           );
+///       }
+/// ```
 #[derive(Debug, Default, Clone)]
 pub struct SingleFrameAnimation {
     pub handle: Handle<TextureAtlas>,
