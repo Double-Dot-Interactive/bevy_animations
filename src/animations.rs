@@ -792,3 +792,68 @@ impl LinearTransformAnimation {
         }
     }
 }
+
+/// Single Frame Animations. These are easy versatile animations to add to any entity or FX animation 
+#[derive(Debug, Default, Clone)]
+pub struct SingleFrameAnimation {
+    pub handle: Handle<TextureAtlas>,
+    pub blocking: bool,
+    pub blocking_priority: i32,
+    pub blocking_timer: AnimationTimer,
+    pub blocking_finished: bool,
+    direction_indexes: AnimationDirectionIndexes,
+}
+
+impl SingleFrameAnimation {
+    pub fn new(handle: Handle<TextureAtlas>, blocking: bool, blocking_priority: i32, blocking_duration_in_sec: f32, direction_indexes: AnimationDirectionIndexes) -> Self {
+        Self { 
+            handle,
+            blocking,
+            blocking_priority,
+            blocking_timer: AnimationTimer(Timer::from_seconds(blocking_duration_in_sec, TimerMode::Repeating)),
+            direction_indexes,
+            ..Default::default()
+        }
+    }
+    pub fn cycle_animation(&mut self, mut sprite: Mut<TextureAtlasSprite>, direction: &AnimationDirection, delta: Duration) {
+        if !self.blocking_timer.duration().is_zero() {
+            self.blocking_timer.tick(delta);
+        }
+        if self.blocking_timer.finished() {
+            self.blocking_finished = true;
+        }
+
+        match self.direction_indexes {
+            AnimationDirectionIndexes::IndexBased(_) => warn!("Using an `IndexBased` `AnimationDirectionIndexes` on a `SingleFrameAnimation` is useless. Change to `FlipBased` to remove this warning"),
+            AnimationDirectionIndexes::FlipBased(flip_based_direction) => {
+                if flip_based_direction.left_direction_is_flipped {
+                    match *direction {
+                        AnimationDirection::Left => sprite.flip_x = true,
+                        AnimationDirection::Right => sprite.flip_x = false,
+                        _ => {}
+                    }
+                }
+                else  {
+                    match *direction {
+                        AnimationDirection::Left => sprite.flip_x = false,
+                        AnimationDirection::Right => sprite.flip_x = true,
+                        _ => {}
+                    }
+                }
+            },
+        }
+    }
+    pub fn reset_animation(
+        &mut self,
+        sprite: Option<Mut<TextureAtlasSprite>>,
+        _direction: Option<&AnimationDirection>
+    ) {
+        self.blocking_timer.reset();
+        self.blocking_finished = false;
+
+        if let Some(mut sprite) = sprite {
+            sprite.flip_x = false;
+            sprite.flip_y = false;
+        }
+    }
+}

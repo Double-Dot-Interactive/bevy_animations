@@ -109,7 +109,7 @@ impl Default for AnimationDirectionIndexes {
     }
 }
 
-#[derive(Debug, Component)]
+#[derive(Debug, Component, Clone)]
 pub enum AnimationType {
     // This is Primarily for This Is Primarily For Animations on players or NPCs, for example shooting a bow or reloading a gun 
     Timed(TimedAnimation, AnimationName),
@@ -119,6 +119,8 @@ pub enum AnimationType {
     LinearTimed(LinearTimedAnimation, AnimationName),
     /// This Is Primarily For Animations on objects, for example a projectile
     LinearTransform(LinearTransformAnimation, AnimationName),
+    /// This can be usefull for any use case
+    SingleFrame(SingleFrameAnimation, AnimationName),
 }
 
 impl AnimationType {
@@ -128,6 +130,7 @@ impl AnimationType {
             AnimationType::Transform(animation, _) => animation.handle.clone(),
             AnimationType::LinearTimed(animation, _) => animation.handle.clone(),
             AnimationType::LinearTransform(animation, _) => animation.handle.clone(),
+            AnimationType::SingleFrame(animation, _) => animation.handle.clone(),
         }
     }
     pub fn timed_animation(&mut self) -> Option<&mut TimedAnimation> {
@@ -154,12 +157,19 @@ impl AnimationType {
             _ => None
         }
     }
+    pub fn single_frame_animation(&mut self) -> Option<&mut SingleFrameAnimation> {
+        match self {
+            AnimationType::SingleFrame(single_frame_animation, _) => Some(single_frame_animation),
+            _ => None
+        }
+    }
     pub fn get_name(&self) -> &'static str {
         match self {
             AnimationType::Timed(_, name) => &name,
             AnimationType::Transform(_, name) => &name,
             AnimationType::LinearTimed(_, name) => &name,
             AnimationType::LinearTransform(_, name) => &name,
+            AnimationType::SingleFrame(_, name) => &name
         }
     }
     pub fn reset_animation(&mut self) {
@@ -167,7 +177,8 @@ impl AnimationType {
             AnimationType::Timed(animation, _) => animation.reset_animation(None, None),
             AnimationType::Transform(animation, _) => animation.reset_animation(None, None),
             AnimationType::LinearTimed(animation, _) => animation.reset_animation(None),
-            AnimationType::LinearTransform(animation, _) => animation.reset_animation(None, None)
+            AnimationType::LinearTransform(animation, _) => animation.reset_animation(None, None),
+            AnimationType::SingleFrame(animation, _) => animation.reset_animation(None, None),
         }
     }
 }
@@ -194,7 +205,7 @@ impl AnimationType {
 /// * **Note** that you can send an event of the same name multiple times even while an animation is in progress without ruining it
 ///
 /// * **Note** an animation that has been sent will animate till end or repeat forever
-#[derive(Debug, Event)]
+#[derive(Debug)]
 pub struct AnimationEvent(pub AnimationName, pub Entity);
 
 /// Send a request to reset the animation of an `Entity`
@@ -217,8 +228,14 @@ pub struct AnimationEvent(pub AnimationName, pub Entity);
 /// ```
 /// 
 /// * **Note** this will overwrite an animation request in the same frame
-#[derive(Debug, Event)]
+#[derive(Debug)]
 pub struct ResetAnimationEvent(pub Entity);
+
+/// Send a request to start an FX animation. This will spawn a new animation for and FX then immediately despawn it
+/// 
+/// Needs the `AnimationName` and the position to spawn the new FX animation at
+#[derive(Debug)]
+pub struct FXAnimationEvent(pub AnimationName, pub Vec3);
 
 #[derive(Debug, PartialEq, Eq, Clone, Default, Component)]
 pub enum AnimationDirection {

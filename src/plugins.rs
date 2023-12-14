@@ -33,10 +33,12 @@ impl Plugin for AnimationsPlugin {
             })
             .add_event::<AnimationEvent>()
             .add_event::<ResetAnimationEvent>()
+            .add_event::<FXAnimationEvent>()
             .insert_resource(Animations::default())
             .insert_resource(EntitesToRemove::default())
-            .add_systems(Update, (
-                catch_animation_event,
+            .add_systems((
+                catch_fx_animation_events,
+                catch_animation_events,
                 catch_reset_events,
                 remove_entites
             ).chain())
@@ -47,7 +49,7 @@ impl Plugin for AnimationsPlugin {
 /// Main System That Checks for Incoming events
 /// If any incoming events are found they are checked to make sure they are new and if they are the Handle<TextureAtlas> is changed for the entity
 /// After checking the events. All the [`AnimatingEntities`](crate::AnimatingEntities) have their current animations cycled
-fn catch_animation_event(
+fn catch_animation_events(
     time: Res<Time>,
     mut query: Query<(
         &mut Handle<TextureAtlas>,
@@ -61,7 +63,7 @@ fn catch_animation_event(
     mut animation_events: EventReader<AnimationEvent>
 ) {
     // our main event loop
-    for event in animation_events.read() {
+    for event in animation_events.iter() {
         // get the animating entity from the entity passed in from our event
         let animating_entity = animations.entities.get_mut(&event.1).expect(format!("Entity Not Found in Map For {} animation make sure your adding every necessary component to the entity i.e `AnimationDirection`", event.0).as_str());
         // query the texture the sprite and the current direction of the entity
@@ -88,19 +90,34 @@ fn catch_animation_event(
                 new_priority = new_timed_animation.blocking_priority;
                 sprite_index = new_timed_animation.sprite_index(&animating_entity.last_valid_direction);
             }
-            // if the new animation isn't a timed one we don't care about blocking or priority
+            else if let Some(new_singe_frame_animation) = new_animation.single_frame_animation() {
+                blocking = new_singe_frame_animation.blocking;
+                new_priority = new_singe_frame_animation.blocking_priority;
+            }
+            // if the new animation isn't a timed or single_frame one we don't care about blocking or priority
             else if let Some(new_transform_animation) = new_animation.transform_animation() {
                 sprite_index = new_transform_animation.sprite_index(&animating_entity.last_valid_direction);
             }
             // if we are in a blocking animation we don't want to changed our animation state
+            // info!("{}", animating_entity.in_blocking_animation);
             if animating_entity.in_blocking_animation {
                 // check the new animations priority from the current one
-                if let Some(curr_timed_animation) = animating_entity.curr_animation.lock().unwrap().timed_animation() {
+                let mut curr_animation = animating_entity.curr_animation.lock().unwrap();
+                if let Some(curr_timed_animation) = curr_animation.timed_animation() {
                     if curr_timed_animation.blocking_priority > new_priority {
+                        // info!("blocking animation");
+                        continue;
+                    }
+                }
+                else if let Some(curr_single_frame_animation) = curr_animation.single_frame_animation() {
+                    // info!("{} {} {}", curr_single_frame_animation.blocking_priority, new_priority, curr_single_frame_animation.blocking_finished);
+                    if curr_single_frame_animation.blocking_priority > new_priority  && !curr_single_frame_animation.blocking_finished {
+                        // info!("blocking animation");
                         continue;
                     }
                 }
                 else {
+                    // info!("blocking animation");
                     continue;
                 }
             }
@@ -177,6 +194,10 @@ fn catch_animation_event(
                 animation_entity.curr_animation_called = false;
             }
         }
+        // if the current animation is a single frame animation
+        else if let Some(single_frame_animation) = curr_animation.single_frame_animation() {
+            single_frame_animation.cycle_animation(sprite, &animation_entity.last_valid_direction, time.delta())
+        }
         // if we get here something bad happened it will most likely never hit as the typing is pretty strong
         else {
             panic!("Something Went Terribly Wrong Animating {} Check Your Configurations", curr_animation.get_name());
@@ -193,7 +214,7 @@ fn catch_reset_events(
     mut entities_to_remove: ResMut<EntitesToRemove>,
     mut animation_events: EventReader<ResetAnimationEvent>
 ) {
-    for event in animation_events.read() {
+    for event in animation_events.iter() {
         // if the entity wasn't found in the query we want to remove it from our data structure
         let (sprite, direction) = match query.get_mut(event.0) {
             Ok(q) => q,
@@ -229,6 +250,16 @@ fn catch_reset_events(
         else {
             panic!("Something went terribly wrong getting the current animation");
         }
+    }
+}
+
+fn catch_fx_animation_events(
+    mut event_reader: EventReader<FXAnimationEvent>,
+    mut commands: Commands,
+    mut animations: ResMut<Animations>
+) {
+    for event in event_reader.iter() {
+        let _ = animations.start_fx_animation(event.0, &mut commands, event.1);
     }
 }
 

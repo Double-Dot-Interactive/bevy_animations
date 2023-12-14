@@ -22,19 +22,21 @@ pub struct EntitesToRemove(Vec<Entity>);
 pub struct AnimationTimer(pub Timer);
 
 #[derive(Debug)]
-pub struct AnimatingEntities {
+pub struct AnimatingEntity {
     pub entity: Entity,
     pub in_blocking_animation: bool,
-    pub animations: HashMap<&'static str, Arc<Mutex<AnimationType>>>,
+    pub animations: HashMap<AnimationName, Arc<Mutex<AnimationType>>>,
     pub curr_animation: Arc<Mutex<AnimationType>>,
     pub curr_direction: AnimationDirection,
     pub last_valid_direction: AnimationDirection,
     pub curr_animation_called: bool,
+    pub fx_animation: bool
 }
 
 #[derive(Default, Resource, Debug)]
 pub struct Animations {
-    entities: HashMap<Entity, AnimatingEntities>,
+    entities: HashMap<Entity, AnimatingEntity>,
+    fx_animations: HashMap<AnimationName, Arc<Mutex<AnimationType>>>
 }
 
 impl Animations {
@@ -47,18 +49,56 @@ impl Animations {
             let value = Arc::new(Mutex::new(value));
             let mut map = HashMap::new();
             map.insert(value.lock().unwrap().get_name(), Arc::clone(&value));
-            self.entities.insert(key, AnimatingEntities { 
+            self.entities.insert(key, AnimatingEntity { 
                 entity: key, 
                 animations: map, 
                 curr_animation: value, 
                 curr_direction: AnimationDirection::Still,
                 last_valid_direction: AnimationDirection::Down,
                 in_blocking_animation: false,
-                curr_animation_called: false
+                curr_animation_called: false,
+                fx_animation: false
             });
             return self;
         }
     }
+    /// insert an FX animation this. In order to start the FX animation send it through an `EventWriter(FXAnimationEvent(AnimationName))`
+    pub fn insert_fx_animation(&mut self, key: AnimationName, value: AnimationType) -> &mut Self {
+        if let Some(_) = self.fx_animations.get(key) {
+            return self;
+        }
+        else {
+            self.fx_animations.insert(key, Arc::new(Mutex::new(value)));
+            return self;
+        }
+    }
+    /// Add an FX animation to a new `AnimatingEntity`. This will start the animation specified.
+    pub fn start_fx_animation(&mut self, key: AnimationName, commads: &mut Commands, pos: Vec3) -> Result<(), ()> {
+        // get the animation from the FX animations
+        let Some(animation) = self.fx_animations.get(key) else { return Err(()) };
+        let unlock_animation = animation.lock().unwrap();
+
+        // grab the atlas from the animations and spawn a new entity with the atlas at the specified pos
+        let atlas = unlock_animation.get_atlas();
+        let entity = commads.spawn(SpriteSheetBundle {
+            texture_atlas: atlas,
+            transform: Transform::from_translation(pos),
+            ..Default::default()
+        }).id();
+
+        // add the animation and entity to a new AnimatingEntity to be animated
+        self.entities.insert(entity, AnimatingEntity {
+            entity,
+            in_blocking_animation: false,
+            animations: HashMap::new(),
+            curr_animation: animation.clone(),
+            curr_direction: AnimationDirection::default(),
+            last_valid_direction: AnimationDirection::Down,
+            curr_animation_called: false,
+            fx_animation: true,
+        });
+        return Ok(());
+    } 
     /// returns Some(bool) if the entity exists and Some(true) if the entity is in a blocking animation
     /// 
     /// returns None if the entity was not found 
@@ -102,11 +142,11 @@ impl Animations {
         false
     }
     /// Mainly For Debug Purposes to see the map. Not reccomended to change item.
-    pub fn get_mut_map(&mut self) -> &mut HashMap<Entity, AnimatingEntities> {
+    pub fn get_mut_map(&mut self) -> &mut HashMap<Entity, AnimatingEntity> {
         &mut self.entities
     }
     /// Mainly For Debug Purposes to see the map. Not reccomended to change item.
-    pub fn get_map(&self) -> &HashMap<Entity, AnimatingEntities> {
+    pub fn get_map(&self) -> &HashMap<Entity, AnimatingEntity> {
         &self.entities
     }
 }
