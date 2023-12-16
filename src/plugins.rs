@@ -93,6 +93,7 @@ fn catch_animation_events(
             else if let Some(new_singe_frame_animation) = new_animation.single_frame_animation() {
                 blocking = new_singe_frame_animation.blocking;
                 new_priority = new_singe_frame_animation.blocking_priority;
+                sprite_index = new_singe_frame_animation.sprite_index(&animating_entity.last_valid_direction);
             }
             // if the new animation isn't a timed or single_frame one we don't care about blocking or priority
             else if let Some(new_transform_animation) = new_animation.transform_animation() {

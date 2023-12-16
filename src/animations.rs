@@ -89,12 +89,14 @@ impl TimedAnimation {
         let index = self.animation_frames.get(self.animation_tick - 1);
         if self.repeating {
             match index {
-                Some(index) => return Some(*index),
+                Some(index) => {
+                    return Some(*index)
+                },
                 None => {
                     self.animation_tick = 1;
-                    self.animation_frames.get(self.animation_tick)
-                        .expect(format!("There was A Problem Cycling Animation\nThe index is {} but The Frame Length is {}", self.animation_tick, self.animation_frames.len()).as_str());
-                    return Some(self.animation_tick);
+                    let index = self.animation_frames.get(self.animation_tick - 1)
+                    .expect(format!("There was A Problem Cycling Animation\nThe index is {} but The Frame Length is {}", self.animation_tick, self.animation_frames.len()).as_str());
+                    return Some(*index);
                 }
             }
         } else {
@@ -121,10 +123,12 @@ impl TimedAnimation {
 
         match self.get_y_index(direction) {
             YIndex::Index(y_index) => {
-                (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+                // (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+                y_index * self.frame.x as usize + x_index
             }
             YIndex::Flip(_, y_index) => {
-                (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+                // (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+                y_index * self.frame.x as usize + x_index
             }
         }
     }
@@ -151,7 +155,8 @@ impl TimedAnimation {
                     return None;
                 }
             };
-            let index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+            // let index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+            let index = y_index * self.frame.x as usize + x_index;
             sprite.index = index;
             let timing = *self
                 .frame_timings_in_secs
@@ -219,8 +224,15 @@ impl TimedAnimation {
             (AnimationDirection::Right, AnimationDirectionIndexes::FlipBased(index)) => {
                 YIndex::Flip(!index.left_direction_is_flipped, index.x_direction_index)
             }
-            (AnimationDirection::Still, _) => YIndex::Index(self.previous_dir_index),
-            (_, _) => YIndex::Index(1),
+            (AnimationDirection::Still, AnimationDirectionIndexes::FlipBased(index)) => {
+                YIndex::Flip(false, index.x_direction_index)
+            }
+            (AnimationDirection::Still, _) => {
+                YIndex::Index(self.previous_dir_index)
+            },
+            (_, _) => {
+                YIndex::Index(1)
+            },
         }
     }
 
@@ -333,7 +345,8 @@ impl TransformAnimation {
             YIndex::Index(y_index) => y_index,
             YIndex::Flip(_, y_index) => y_index,
         };
-        (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+        // (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+        y_index * self.frame.x as usize + x_index
     }
 
     pub fn cycle_animation(
@@ -366,7 +379,8 @@ impl TransformAnimation {
 
             self.previous_dir_index = y_index;
 
-            let index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+            // let index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+            let index = y_index * self.frame.x as usize + x_index;
 
             sprite.index = index;
 
@@ -377,7 +391,8 @@ impl TransformAnimation {
 
             let y_index = self.previous_dir_index;
 
-            sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+            // sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+            sprite.index = y_index * self.frame.x as usize + x_index;
             return Some(());
         }
         Some(())
@@ -390,9 +405,9 @@ impl TransformAnimation {
                 Some(index) => return Some(*index),
                 None => {
                     self.animation_tick = 1;
-                    self.animation_frames.get(self.animation_tick)
+                    let index = self.animation_frames.get(self.animation_tick)
                         .expect(format!("There was A Problem Cycling Animation\nThe index is {} but The Frame Length is {}", self.animation_tick, self.animation_frames.len()).as_str());
-                    return Some(self.animation_tick);
+                    return Some(*index);
                 }
             }
         } else {
@@ -710,7 +725,8 @@ impl LinearTransformAnimation {
             YIndex::Index(y_index) => y_index,
             YIndex::Flip(_, y_index) => y_index,
         };
-        Some((y_index * self.frame.y as usize) - (self.frame.x as usize - x_index))
+        // Some((y_index * self.frame.y as usize) - (self.frame.x as usize - x_index))
+        Some(y_index * self.frame.x as usize + x_index)
     }
 
     fn get_x_index(&self) -> Option<usize> {
@@ -744,7 +760,8 @@ impl LinearTransformAnimation {
 
             self.previous_dir_index = y_index;
 
-            let index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+            // let index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+            let index = y_index * self.frame.x as usize + x_index;
 
             sprite.index = index;
 
@@ -821,11 +838,12 @@ impl LinearTransformAnimation {
 ///                        /* blocking */ true, // if the animation should block others
 ///                        /* blocking_priority */ 1, // the priority at which it will block other blocking animations
 ///                        /* blocking_duration_in_sec */ 0.15, // the duration of the blocking timer because a single frame animation doesn't have timed frames
+///                        /* frame */ Vec2::new(4., 4.), // the length and height of your sprite sheet
+///                        /* x_index_pos */ 0 // the x position of the single frame you want rendered by 0th index
 ///                        /* direction_indexes */ AnimationDirectionIndexes::IndexBased(FlipBased {
 ///                            x_direction_is_flipped: true, // if the left direction is a flipped sprite
 ///                            x_direction_index: 0, // to Determine which Index the Horizontal Directions Sprites are 
 ///                        }), // the indexes to determine the correct sprite for the direction
-///                        /* repeating */ true, // if the animation is repeating or not
 ///                    ),
 ///                    "player_fall" // the name of the animation. will be used when sending an `AnimationEvent`
 ///                )
@@ -839,20 +857,34 @@ pub struct SingleFrameAnimation {
     pub blocking_priority: i32,
     pub blocking_timer: AnimationTimer,
     pub blocking_finished: bool,
+    pub frame: Vec2,
+    x_index_pos: usize,
+    previous_dir_index: usize,
     direction_indexes: AnimationDirectionIndexes,
 }
 
 impl SingleFrameAnimation {
-    pub fn new(handle: Handle<TextureAtlas>, blocking: bool, blocking_priority: i32, blocking_duration_in_sec: f32, direction_indexes: AnimationDirectionIndexes) -> Self {
+    pub fn new(
+        handle: Handle<TextureAtlas>, 
+        blocking: bool, 
+        blocking_priority: i32,
+        blocking_duration_in_sec: f32,
+        frame: Vec2,
+        x_index_pos: usize, 
+        direction_indexes: AnimationDirectionIndexes,
+    ) -> Self {
         Self { 
             handle,
             blocking,
             blocking_priority,
             blocking_timer: AnimationTimer(Timer::from_seconds(blocking_duration_in_sec, TimerMode::Repeating)),
             direction_indexes,
+            frame,
+            x_index_pos,
             ..Default::default()
         }
     }
+    // pub get_y_index(&self, )
     pub fn cycle_animation(&mut self, mut sprite: Mut<TextureAtlasSprite>, direction: &AnimationDirection, delta: Duration) {
         if !self.blocking_timer.duration().is_zero() {
             self.blocking_timer.tick(delta);
@@ -861,9 +893,22 @@ impl SingleFrameAnimation {
             self.blocking_finished = true;
         }
 
+        let index;
+        if *direction != AnimationDirection::Still {
+            self.previous_dir_index = AnimationDirection::get_direction(direction).y as usize;
+        } 
         match self.direction_indexes {
-            AnimationDirectionIndexes::IndexBased(_) => warn!("Using an `IndexBased` `AnimationDirectionIndexes` on a `SingleFrameAnimation` is useless. Change to `FlipBased` to remove this warning"),
+            AnimationDirectionIndexes::IndexBased(index_based_direction) => {
+                match *direction {
+                    AnimationDirection::Still => index = self.frame.x as usize * self.previous_dir_index + self.x_index_pos,
+                    AnimationDirection::Down => index = self.frame.x as usize * index_based_direction.down + self.x_index_pos,
+                    AnimationDirection::Left => index = self.frame.x as usize * index_based_direction.left + self.x_index_pos,
+                    AnimationDirection::Right => index = self.frame.x as usize * index_based_direction.right + self.x_index_pos,
+                    AnimationDirection::Up => index = self.frame.x as usize * index_based_direction.up + self.x_index_pos,
+                }
+            },
             AnimationDirectionIndexes::FlipBased(flip_based_direction) => {
+                index = self.frame.x as usize * flip_based_direction.x_direction_index + self.x_index_pos;
                 if flip_based_direction.left_direction_is_flipped {
                     match *direction {
                         AnimationDirection::Left => sprite.flip_x = true,
@@ -880,7 +925,26 @@ impl SingleFrameAnimation {
                 }
             },
         }
+        sprite.index = index;
     }
+
+    pub fn sprite_index(&self, direction: &AnimationDirection) -> usize {
+        match self.direction_indexes {
+            AnimationDirectionIndexes::IndexBased(index_based_direction) => {
+                match *direction {
+                    AnimationDirection::Still => self.frame.x as usize * self.previous_dir_index + self.x_index_pos,
+                    AnimationDirection::Down => self.frame.x as usize * index_based_direction.down + self.x_index_pos,
+                    AnimationDirection::Left => self.frame.x as usize * index_based_direction.left + self.x_index_pos,
+                    AnimationDirection::Right => self.frame.x as usize * index_based_direction.right + self.x_index_pos,
+                    AnimationDirection::Up => self.frame.x as usize * index_based_direction.up + self.x_index_pos,
+                }
+            },
+            AnimationDirectionIndexes::FlipBased(flip_based_direction) => {
+                self.frame.x as usize * flip_based_direction.x_direction_index + self.x_index_pos
+            },
+        }
+    }
+
     pub fn reset_animation(
         &mut self,
         sprite: Option<Mut<TextureAtlasSprite>>,

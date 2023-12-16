@@ -239,12 +239,12 @@ pub struct FXAnimationEvent(pub AnimationName, pub Vec3);
 
 #[derive(Debug, PartialEq, Eq, Clone, Default, Component)]
 pub enum AnimationDirection {
+    #[default]
+    Still,
     Left,
     Right,
     Up,
     Down,
-    #[default]
-    Still
 }
 
 impl AnimationDirection {

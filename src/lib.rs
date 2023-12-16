@@ -54,7 +54,7 @@ impl Animations {
                 animations: map, 
                 curr_animation: value, 
                 curr_direction: AnimationDirection::Still,
-                last_valid_direction: AnimationDirection::Down,
+                last_valid_direction: AnimationDirection::default(),
                 in_blocking_animation: false,
                 curr_animation_called: false,
                 fx_animation: false
