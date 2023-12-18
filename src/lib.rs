@@ -10,6 +10,9 @@ pub use animations::*;
 pub use plugins::*;
 pub use types::*;
 
+#[derive(Component, Clone)]
+struct FXAnimation;
+
 #[derive(Debug, Resource, Default)]
 pub struct AnimationsConfig {
     pixels_per_meter: f32
@@ -72,32 +75,49 @@ impl Animations {
             return self;
         }
     }
+
     /// Add an FX animation to a new `AnimatingEntity`. This will start the animation specified.
-    pub fn start_fx_animation(&mut self, key: AnimationName, commads: &mut Commands, pos: Vec3) -> Result<(), ()> {
-        // get the animation from the FX animations
-        let Some(animation) = self.fx_animations.get(key) else { return Err(()) };
-        let unlock_animation = animation.lock().unwrap();
+    pub fn start_fx_animation(&mut self, key: Entity, animation: AnimationName, pos: Vec3) -> Result<SpriteSheetBundle, ()> {
+        let Some(animation) = self.fx_animations.get(animation) else { return Err(()) };
+        let mut unlock_animation = animation.lock().unwrap();
 
         // grab the atlas from the animations and spawn a new entity with the atlas at the specified pos
         let atlas = unlock_animation.get_atlas();
-        let entity = commads.spawn(SpriteSheetBundle {
-            texture_atlas: atlas,
-            transform: Transform::from_translation(pos),
-            ..Default::default()
-        }).id();
-
         // add the animation and entity to a new AnimatingEntity to be animated
-        self.entities.insert(entity, AnimatingEntity {
-            entity,
+        self.entities.insert(key, AnimatingEntity {
+            entity: key,
             in_blocking_animation: false,
             animations: HashMap::new(),
             curr_animation: animation.clone(),
             curr_direction: AnimationDirection::default(),
-            last_valid_direction: AnimationDirection::Down,
-            curr_animation_called: false,
+            last_valid_direction: AnimationDirection::default(),
+            curr_animation_called: true,
             fx_animation: true,
         });
-        return Ok(());
+        let sprite_index = if let Some(timed_animation) = unlock_animation.timed_animation() {
+            timed_animation.sprite_index(&AnimationDirection::default())
+        }
+        else if let Some(transform_animation) = unlock_animation.transform_animation() {
+            transform_animation.sprite_index(&AnimationDirection::default())
+        }
+        else if let Some(linear_timed_animation) = unlock_animation.linear_timed_animation() {
+            linear_timed_animation.sprite_index(&AnimationDirection::default())
+        }
+        else if let Some(linear_transform_animation) = unlock_animation.linear_transform_animation() {
+            linear_transform_animation.sprite_index(&AnimationDirection::default())
+        }
+        else if let Some(single_frame_animation) = unlock_animation.single_frame_animation() {
+            single_frame_animation.sprite_index(&AnimationDirection::default())
+        }
+        else {
+            panic!("Something Went Terribly Wrong Starting FX Animation");
+        };
+        return Ok(SpriteSheetBundle {
+            texture_atlas: atlas,
+            sprite: TextureAtlasSprite::new(sprite_index),
+            transform: Transform::from_translation(pos),
+            ..Default::default()
+        });
     } 
     /// returns Some(bool) if the entity exists and Some(true) if the entity is in a blocking animation
     /// 

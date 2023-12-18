@@ -55,7 +55,14 @@ pub type AnimationName = &'static str;
 #[derive(Clone, Debug, Copy)]
 pub enum AnimationDirectionIndexes {
     IndexBased(IndexBasedDirection),
-    FlipBased(FlipBasedDirection)
+    FlipBased(FlipBasedDirection),
+    FX(FXBasedDirection)
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct FXBasedDirection {
+    /// The y-index of the FX animation. 0th index Based
+    pub index: usize
 }
 
 /// Used to define the direction index. If you don't have sprites with multiple directions this will
@@ -65,11 +72,9 @@ pub enum AnimationDirectionIndexes {
 /// is functionally more proper
 #[derive(Debug, Clone, Copy)]
 pub struct FlipBasedDirection {
-    // /// To Determine if the Sprite Should be FLipped
-    // pub is_flipped: bool,
     /// To Determine if the Left Facing Sprites are Left Facing When Flipped or Not 
     pub left_direction_is_flipped: bool,
-    /// To Determine which Index the Horizontal Directions Sprites are
+    /// To Determine which y-index the Horizontal Directions Sprites. 0th index Based
     pub x_direction_index: usize,
 
 }
@@ -80,13 +85,13 @@ pub struct FlipBasedDirection {
 /// It should have frames for each direction you need as the y index on the grid.
 #[derive(Debug, Clone, Copy)]
 pub struct IndexBasedDirection {
-    /// The Y index on the Sprite Sheet for Left Facing Sprites
+    /// The Y index on the Sprite Sheet for Left Facing Sprites. 0th index Based
     pub left: usize,
-    /// The Y index on the Sprite Sheet for Right Facing Sprites
+    /// The Y index on the Sprite Sheet for Right Facing Sprites. 0th index Based
     pub right: usize,
-    /// The Y index on the Sprite Sheet for Upward Facing Sprites
+    /// The Y index on the Sprite Sheet for Upward Facing Sprites. 0th index Based
     pub up: usize,
-    /// The Y index on the Sprite Sheet for Downward Facing Sprites
+    /// The Y index on the Sprite Sheet for Downward Facing Sprites. 0th index Based
     pub down: usize,
 
 }

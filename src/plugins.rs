@@ -38,13 +38,33 @@ impl Plugin for AnimationsPlugin {
             .insert_resource(EntitesToRemove::default())
             .add_systems((
                 catch_fx_animation_events,
+                // fx_ani,
                 catch_animation_events,
                 catch_reset_events,
-                remove_entites
+                remove_entites,
             ).chain())
             ;
     }
 }
+
+// fn fx_ani(
+//     query: Query<Entity, With<FXAnimation>>,
+//     mut s_query: Query<(
+//         &mut Handle<TextureAtlas>,
+//         &mut TextureAtlasSprite,
+//         &mut Transform,
+//         &AnimationDirection
+//     )>,
+//     animations: Res<Animations>
+// ) {
+//     let mut num = 0;
+//     for fx in query.iter() {
+//         let stuff = s_query.get(fx).unwrap();
+//         animations.entities.get(&fx).unwrap();
+//         info!("found {num}");
+//         num += 1;
+//     }
+// }
 
 /// Main System That Checks for Incoming events
 /// If any incoming events are found they are checked to make sure they are new and if they are the Handle<TextureAtlas> is changed for the entity
@@ -60,7 +80,8 @@ fn catch_animation_events(
     mut animations: ResMut<Animations>,
     mut entities_to_remove: ResMut<EntitesToRemove>,
     config: Res<AnimationsConfig>,
-    mut animation_events: EventReader<AnimationEvent>
+    mut animation_events: EventReader<AnimationEvent>,
+    mut commands: Commands
 ) {
     // our main event loop
     for event in animation_events.iter() {
@@ -139,6 +160,7 @@ fn catch_animation_events(
             }
         }
     } 
+
     // our main animating loop
     for (entity, animation_entity) in animations.entities.iter_mut() {
         // query the sprite and transform from the entity
@@ -146,7 +168,10 @@ fn catch_animation_events(
             Ok(query) => query,
             Err(_) => {
                 // if we didn't find the entity in the query we should remove it as it doesn't exist anymore
-                entities_to_remove.0.push(*entity);
+                if !animation_entity.fx_animation {
+                    entities_to_remove.0.push(*entity);
+                    info!("removing entity");
+                }
                 continue;
             }
         };
@@ -158,6 +183,8 @@ fn catch_animation_events(
             continue;
         }
 
+        // info!("{}", curr_animation.get_name());
+
         // if the current animation is transform based we should cycle it
         if let Some(transform_animation) = curr_animation.transform_animation() {
             if animation_entity.in_blocking_animation {
@@ -168,12 +195,20 @@ fn catch_animation_events(
                 &animation_entity.last_valid_direction, 
                 transform, 
                 config.pixels_per_meter) {
-                animation_entity.curr_animation_called = false;
+                    if animation_entity.fx_animation {
+                        entities_to_remove.0.push(*entity);
+                    }
+                    commands.entity(*entity).despawn_recursive();
+                    animation_entity.curr_animation_called = false;
             }
         } 
         // if our current animation is timed based we should cycle it
         else if let Some(timed_animation) = curr_animation.timed_animation() {
             if let None = timed_animation.cycle_animation(sprite, &animation_entity.last_valid_direction, time.delta()) {
+                if animation_entity.fx_animation {
+                    entities_to_remove.0.push(*entity);
+                }
+                commands.entity(*entity).despawn_recursive();
                 animation_entity.in_blocking_animation = false;
                 animation_entity.curr_animation_called = false;
             }
@@ -181,6 +216,10 @@ fn catch_animation_events(
         // if the current animation is linear time based we should cycle it
         else if let Some(linear_timed_animation) = curr_animation.linear_timed_animation() {
             if let None = linear_timed_animation.cycle_animation(sprite, time.delta()) {
+                if animation_entity.fx_animation {
+                    entities_to_remove.0.push(*entity);
+                }
+                commands.entity(*entity).despawn_recursive();
                 animation_entity.in_blocking_animation = false;
                 animation_entity.curr_animation_called = false;
             }
@@ -192,7 +231,11 @@ fn catch_animation_events(
                 &animation_entity.last_valid_direction,
                 transform,
                 config.pixels_per_meter) {
-                animation_entity.curr_animation_called = false;
+                    if animation_entity.fx_animation {
+                        entities_to_remove.0.push(*entity);
+                    }
+                    commands.entity(*entity).despawn_recursive();
+                    animation_entity.curr_animation_called = false;
             }
         }
         // if the current animation is a single frame animation
@@ -260,7 +303,16 @@ fn catch_fx_animation_events(
     mut animations: ResMut<Animations>
 ) {
     for event in event_reader.iter() {
-        let _ = animations.start_fx_animation(event.0, &mut commands, event.1);
+        let entity = commands.spawn(AnimationDirection::default()).id();
+        let Ok(sprite_sheet_bundle) = animations.start_fx_animation(entity, event.0, event.1) else { 
+            warn!("There was a problem spawning your FXAnimation {}", event.0);
+            continue;
+        };
+
+        commands.entity(entity)
+            .insert(sprite_sheet_bundle)
+            .insert(FXAnimation)
+        ;
     }
 }
 

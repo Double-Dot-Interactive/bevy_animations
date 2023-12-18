@@ -191,13 +191,11 @@ impl TimedAnimation {
                 .expect("Something Went Wrong Reseting Animation");
             match self.get_y_index(direction) {
                 YIndex::Index(y_index) => {
-                    sprite.index =
-                        (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+                    sprite.index = y_index * self.frame.x as usize + x_index;
                 }
                 YIndex::Flip(flip, y_index) => {
                     sprite.flip_x = flip;
-                    sprite.index =
-                        (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+                    sprite.index = y_index * self.frame.x as usize + x_index;
                 }
             }
         }
@@ -226,6 +224,9 @@ impl TimedAnimation {
             }
             (AnimationDirection::Still, AnimationDirectionIndexes::FlipBased(index)) => {
                 YIndex::Flip(false, index.x_direction_index)
+            }
+            (_, AnimationDirectionIndexes::FX(fx_based_animation)) => {
+                YIndex::Index(fx_based_animation.index)
             }
             (AnimationDirection::Still, _) => {
                 YIndex::Index(self.previous_dir_index)
@@ -439,6 +440,9 @@ impl TransformAnimation {
             (AnimationDirection::Right, AnimationDirectionIndexes::FlipBased(index)) => {
                 YIndex::Flip(!index.left_direction_is_flipped, index.x_direction_index)
             }
+            (_, AnimationDirectionIndexes::FX(fx_based_animation)) => {
+                YIndex::Index(fx_based_animation.index)
+            }
             (AnimationDirection::Still, _) => YIndex::Index(self.previous_dir_index),
             (_, _) => YIndex::Index(1),
         }
@@ -456,13 +460,11 @@ impl TransformAnimation {
                 .expect("Something Went Wrong Reseting Animation");
             match self.get_y_index(direction) {
                 YIndex::Index(y_index) => {
-                    sprite.index =
-                        (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+                    sprite.index = y_index * self.frame.x as usize + x_index;
                 }
                 YIndex::Flip(flip, y_index) => {
                     sprite.flip_x = flip;
-                    sprite.index =
-                        (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+                    sprite.index = y_index * self.frame.x as usize + x_index; 
                 }
             }
         }
@@ -547,6 +549,10 @@ impl LinearTimedAnimation {
                 None
             }
         }
+    }
+
+    pub fn sprite_index(&mut self, _direction: &AnimationDirection) -> usize {
+        if let Some(index) = self.get_x_index() { index } else { 0 }
     }
 
     pub fn cycle_animation(
@@ -711,22 +717,25 @@ impl LinearTransformAnimation {
             (AnimationDirection::Right, AnimationDirectionIndexes::FlipBased(index)) => {
                 YIndex::Flip(!index.left_direction_is_flipped, index.x_direction_index)
             }
+            (_, AnimationDirectionIndexes::FX(fx_based_animation)) => {
+                YIndex::Index(fx_based_animation.index)
+            }
             (AnimationDirection::Still, _) => YIndex::Index(self.previous_dir_index),
             (_, _) => YIndex::Index(1),
         }
     }
 
-    pub fn sprite_index(&mut self, direction: &AnimationDirection) -> Option<usize> {
+    pub fn sprite_index(&mut self, direction: &AnimationDirection) -> usize {
         let x_index = match self.get_x_index() {
             Some(index) => index,
-            None => return None,
+            None => 0,
         };
         let y_index = match self.get_y_index(direction) {
             YIndex::Index(y_index) => y_index,
             YIndex::Flip(_, y_index) => y_index,
         };
         // Some((y_index * self.frame.y as usize) - (self.frame.x as usize - x_index))
-        Some(y_index * self.frame.x as usize + x_index)
+        y_index * self.frame.x as usize + x_index
     }
 
     fn get_x_index(&self) -> Option<usize> {
@@ -772,7 +781,7 @@ impl LinearTransformAnimation {
 
             let y_index = self.previous_dir_index;
 
-            sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+            sprite.index = y_index * self.frame.x as usize + x_index;
             return Some(());
         }
         Some(())
@@ -797,13 +806,11 @@ impl LinearTransformAnimation {
                 .expect("Something Went Wrong Reseting Animation");
             match self.get_y_index(direction) {
                 YIndex::Index(y_index) => {
-                    sprite.index =
-                        (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index)
+                    sprite.index = y_index * self.frame.x as usize + x_index;
                 }
                 YIndex::Flip(flip, y_index) => {
                     sprite.flip_x = flip;
-                    sprite.index =
-                        (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+                    sprite.index = y_index * self.frame.x as usize + x_index;
                 }
             }
         }
@@ -924,6 +931,7 @@ impl SingleFrameAnimation {
                     }
                 }
             },
+            AnimationDirectionIndexes::FX(fx_based_animation)=> index = fx_based_animation.index
         }
         sprite.index = index;
     }
@@ -942,6 +950,7 @@ impl SingleFrameAnimation {
             AnimationDirectionIndexes::FlipBased(flip_based_direction) => {
                 self.frame.x as usize * flip_based_direction.x_direction_index + self.x_index_pos
             },
+            AnimationDirectionIndexes::FX(fx_based_animation)=> fx_based_animation.index
         }
     }
 
