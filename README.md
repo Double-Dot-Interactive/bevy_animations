@@ -172,7 +172,7 @@ fn check_collisions(
 
 ### More Documentation
 If you need more in depth Documentation and more examples for all of the current implementations visit the
-[api docs](https://docs.rs/bevy_animations/0.3.1/bevy_animations/)
+[api docs](https://docs.rs/bevy_animations/latest/bevy_animations/)
  
 ### Open Source
-bevy_animations is open-source forever. You can contribute via the [`GitHub Repo`](https://github.com/y0Phoenix/bevy_animations)
+bevy_animations is open-source forever. You can contribute via the [`GitHub Repo`](https://github.com/Double-Dot-Interactive/bevy_animations)

@@ -546,6 +546,9 @@ impl LinearTimedAnimation {
             Some(index) => Some(*index),
             None => {
                 self.animation_tick = 1;
+                if self.repeating {
+                    return Some(0)
+                }
                 None
             }
         }
@@ -738,10 +741,16 @@ impl LinearTransformAnimation {
         y_index * self.frame.x as usize + x_index
     }
 
-    fn get_x_index(&self) -> Option<usize> {
+    fn get_x_index(&mut self) -> Option<usize> {
         match self.animation_frames.get(self.animation_tick) {
             Some(index) => Some(*index),
-            None => None,
+            None => {
+                self.animation_tick = 1;
+                if self.repeating {
+                    return Some(0)
+                }
+                None
+            },
         }
     }
 
