@@ -52,7 +52,6 @@ pub struct TimedAnimation {
     pub blocking: bool,
     pub blocking_priority: i32,
     pub animation_frames: Vec<usize>,
-    pub handle: Handle<TextureAtlas>,
     pub frame: Vec2,
     pub direction_indexes: AnimationDirectionIndexes,
     pub repeating: bool,
@@ -63,7 +62,6 @@ impl TimedAnimation {
     pub fn new(
         animation_frames: Vec<usize>,
         frame_timings_in_secs: Vec<f32>,
-        handle: Handle<TextureAtlas>,
         frame: Vec2,
         direction_indexes: AnimationDirectionIndexes,
         repeating: bool,
@@ -75,7 +73,6 @@ impl TimedAnimation {
             animation_tick: 1,
             animation_frames,
             frame_timings_in_secs,
-            handle,
             frame,
             direction_indexes,
             repeating,
@@ -297,7 +294,6 @@ pub struct TransformAnimation {
     previous_transform: Transform,
     pub animation_frames: Vec<usize>,
     pub meters_per_frame: f32,
-    pub handle: Handle<TextureAtlas>,
     pub frame: Vec2,
     pub direction_indexes: AnimationDirectionIndexes,
     pub repeating: bool,
@@ -307,7 +303,6 @@ impl TransformAnimation {
     pub fn new(
         animation_frames: Vec<usize>,
         meters_per_frame: f32,
-        handle: Handle<TextureAtlas>,
         frame: Vec2,
         direction_indexes: AnimationDirectionIndexes,
         repeating: bool,
@@ -318,7 +313,6 @@ impl TransformAnimation {
             previous_transform: Transform::from_xyz(0., 0., 0.),
             animation_frames,
             meters_per_frame,
-            handle,
             frame,
             direction_indexes,
             repeating,
@@ -515,7 +509,6 @@ pub struct LinearTimedAnimation {
     animation_timer: AnimationTimer,
     pub frame_timings_in_secs: Vec<f32>,
     pub animation_frames: Vec<usize>,
-    pub handle: Handle<TextureAtlas>,
     pub repeating: bool,
 }
 
@@ -523,7 +516,6 @@ impl LinearTimedAnimation {
     pub fn new(
         animation_frames: Vec<usize>,
         frame_timings_in_secs: Vec<f32>,
-        handle: Handle<TextureAtlas>,
         repeating: bool,
     ) -> Self {
         Self {
@@ -536,7 +528,6 @@ impl LinearTimedAnimation {
             )),
             animation_frames,
             frame_timings_in_secs,
-            handle,
             repeating,
         }
     }
@@ -658,7 +649,6 @@ pub struct LinearTransformAnimation {
     previous_dir_index: usize,
     pub animation_frames: Vec<usize>,
     pub meters_per_frame: f32,
-    pub handle: Handle<TextureAtlas>,
     pub frame: Vec2,
     pub repeating: bool,
     pub direction_indexes: AnimationDirectionIndexes,
@@ -669,7 +659,6 @@ impl LinearTransformAnimation {
     fn new(
         animation_frames: Vec<usize>,
         meters_per_frame: f32,
-        handle: Handle<TextureAtlas>,
         frame: Vec2,
         direction_indexes: AnimationDirectionIndexes,
         repeating: bool,
@@ -680,7 +669,6 @@ impl LinearTransformAnimation {
             previous_transform: Transform::from_xyz(0., 0., 0.),
             animation_frames,
             meters_per_frame,
-            handle,
             frame,
             direction_indexes,
             repeating,
@@ -868,7 +856,6 @@ impl LinearTransformAnimation {
 /// ```
 #[derive(Debug, Default, Clone)]
 pub struct SingleFrameAnimation {
-    pub handle: Handle<TextureAtlas>,
     pub blocking: bool,
     pub blocking_priority: i32,
     pub blocking_timer: AnimationTimer,
@@ -881,7 +868,6 @@ pub struct SingleFrameAnimation {
 
 impl SingleFrameAnimation {
     pub fn new(
-        handle: Handle<TextureAtlas>, 
         blocking: bool, 
         blocking_priority: i32,
         blocking_duration_in_sec: f32,
@@ -890,7 +876,6 @@ impl SingleFrameAnimation {
         direction_indexes: AnimationDirectionIndexes,
     ) -> Self {
         Self { 
-            handle,
             blocking,
             blocking_priority,
             blocking_timer: AnimationTimer(Timer::from_seconds(blocking_duration_in_sec, TimerMode::Repeating)),

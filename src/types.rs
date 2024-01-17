@@ -114,7 +114,19 @@ impl Default for AnimationDirectionIndexes {
     }
 }
 
-#[derive(Debug, Component, Clone)]
+#[derive(Debug, Component, Clone, Default)]
+pub struct Animation {
+    pub handle: Handle<TextureAtlas>,
+    pub animation: Arc<Mutex<AnimationType>>,
+}
+
+#[derive(Default, Resource, Debug)]
+pub struct NewAnimation {
+    pub handle: Handle<TextureAtlas>,
+    pub animation: AnimationType
+}
+
+#[derive(Debug, Component, Clone, Default)]
 pub enum AnimationType {
     // This is Primarily for This Is Primarily For Animations on players or NPCs, for example shooting a bow or reloading a gun 
     Timed(TimedAnimation, AnimationName),
@@ -126,18 +138,22 @@ pub enum AnimationType {
     LinearTransform(LinearTransformAnimation, AnimationName),
     /// This can be usefull for any use case
     SingleFrame(SingleFrameAnimation, AnimationName),
+    /// Default value
+    #[default]
+    None
 }
 
 impl AnimationType {
-    pub fn get_atlas(&self) -> Handle<TextureAtlas> {
-        match self {
-            AnimationType::Timed(animation, _) => animation.handle.clone(),
-            AnimationType::Transform(animation, _) => animation.handle.clone(),
-            AnimationType::LinearTimed(animation, _) => animation.handle.clone(),
-            AnimationType::LinearTransform(animation, _) => animation.handle.clone(),
-            AnimationType::SingleFrame(animation, _) => animation.handle.clone(),
-        }
-    }
+    // pub fn get_atlas(&self) -> Handle<TextureAtlas> {
+    //     match self {
+    //         AnimationType::Timed(animation, _) => animation.handle.clone(),
+    //         AnimationType::Transform(animation, _) => animation.handle.clone(),
+    //         AnimationType::LinearTimed(animation, _) => animation.handle.clone(),
+    //         AnimationType::LinearTransform(animation, _) => animation.handle.clone(),
+    //         AnimationType::SingleFrame(animation, _) => animation.handle.clone(),
+    //         AnimationType::None => panic!("Something went terribly wrong"),
+    //     }
+    // }
     pub fn timed_animation(&mut self) -> Option<&mut TimedAnimation> {
         match self {
             AnimationType::Timed(timed_animation, _) => Some(timed_animation),
@@ -168,13 +184,14 @@ impl AnimationType {
             _ => None
         }
     }
-    pub fn get_name(&self) -> &'static str {
+    pub fn get_name(&self) -> AnimationName {
         match self {
             AnimationType::Timed(_, name) => &name,
             AnimationType::Transform(_, name) => &name,
             AnimationType::LinearTimed(_, name) => &name,
             AnimationType::LinearTransform(_, name) => &name,
-            AnimationType::SingleFrame(_, name) => &name
+            AnimationType::SingleFrame(_, name) => &name,
+            AnimationType::None => panic!("Something went terribly wrong"),
         }
     }
     pub fn reset_animation(&mut self) {
@@ -184,6 +201,13 @@ impl AnimationType {
             AnimationType::LinearTimed(animation, _) => animation.reset_animation(None),
             AnimationType::LinearTransform(animation, _) => animation.reset_animation(None, None),
             AnimationType::SingleFrame(animation, _) => animation.reset_animation(None, None),
+            AnimationType::None => panic!("Something went terribly wrong"),
+        }
+    }
+    pub fn is_none(&self) -> bool { 
+        match self {
+            AnimationType::None => true,
+            _ => false
         }
     }
 }
@@ -210,7 +234,7 @@ impl AnimationType {
 /// * **Note** that you can send an event of the same name multiple times even while an animation is in progress without ruining it
 ///
 /// * **Note** an animation that has been sent will animate till end or repeat forever
-#[derive(Debug, Event)]
+#[derive(Debug)]
 pub struct AnimationEvent(pub AnimationName, pub Entity);
 
 /// Send a request to reset the animation of an `Entity`
@@ -233,13 +257,13 @@ pub struct AnimationEvent(pub AnimationName, pub Entity);
 /// ```
 /// 
 /// * **Note** this will overwrite an animation request in the same frame
-#[derive(Debug, Event)]
+#[derive(Debug)]
 pub struct ResetAnimationEvent(pub Entity);
 
 /// Send a request to start an FX animation. This will spawn a new animation for and FX then immediately despawn it
 /// 
 /// Needs the `AnimationName` and the position to spawn the new FX animation at
-#[derive(Debug, Event)]
+#[derive(Debug)]
 pub struct FXAnimationEvent(pub AnimationName, pub Vec3);
 
 #[derive(Debug, PartialEq, Eq, Clone, Default, Component)]

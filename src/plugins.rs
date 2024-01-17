@@ -1,3 +1,5 @@
+use core::panic;
+
 use bevy::prelude::*;
 
 use crate::*;
@@ -36,7 +38,7 @@ impl Plugin for AnimationsPlugin {
             .add_event::<FXAnimationEvent>()
             .insert_resource(Animations::default())
             .insert_resource(EntitesToRemove::default())
-            .add_systems(Update, (
+            .add_systems((
                 catch_fx_animation_events,
                 // fx_ani,
                 catch_animation_events,
@@ -46,25 +48,6 @@ impl Plugin for AnimationsPlugin {
             ;
     }
 }
-
-// fn fx_ani(
-//     query: Query<Entity, With<FXAnimation>>,
-//     mut s_query: Query<(
-//         &mut Handle<TextureAtlas>,
-//         &mut TextureAtlasSprite,
-//         &mut Transform,
-//         &AnimationDirection
-//     )>,
-//     animations: Res<Animations>
-// ) {
-//     let mut num = 0;
-//     for fx in query.iter() {
-//         let stuff = s_query.get(fx).unwrap();
-//         animations.entities.get(&fx).unwrap();
-//         info!("found {num}");
-//         num += 1;
-//     }
-// }
 
 /// Main System That Checks for Incoming events
 /// If any incoming events are found they are checked to make sure they are new and if they are the Handle<TextureAtlas> is changed for the entity
@@ -84,11 +67,15 @@ fn catch_animation_events(
     mut commands: Commands
 ) {
     // our main event loop
-    for event in animation_events.read() {
-        // get the animating entity from the entity passed in from our event
-        let animating_entity = animations.entities.get_mut(&event.1).expect(format!("Entity Not Found in Map For {} animation make sure your adding every necessary component to the entity i.e `AnimationDirection`", event.0).as_str());
+    for event in animation_events.iter() {
+        if !animations.has_entity(&event.1) {
+            panic!("Entity Not Found in Map For {} animation make sure your adding every necessary component to the entity i.e `AnimationDirection`", event.0);
+        }
+        if !animations.has_animation(&event.0) {
+            panic!("Animation {} not found", event.0);
+        }
         // query the texture the sprite and the current direction of the entity
-        let (mut texture_atlas, mut sprite, _, direction) = match query.get_mut(animating_entity.entity) {
+        let (mut texture_atlas, mut sprite, _, direction) = match query.get_mut(event.1) {
             Ok(handle) => handle,
             Err(_) => {
                 // if we didn't find the entity from the query it doesn't exist anymore and should be removed via the remove_entites system
@@ -97,9 +84,15 @@ fn catch_animation_events(
             }
         };
         // if incoming event is new 
-        if animating_entity.curr_animation.lock().unwrap().get_name() != event.0 {
+        if animations.new_animation(event.0, &event.1).expect(format!("Something Went Terribly Wrong Getting New Animation For {}", event.0).as_str()) {
+            let new_animation_handle = animations.get_handle(event.0).expect(format!("Something Went Terribly Wrong Getting Animation For {}", event.0).as_str());
+            // get the animating entity from the entity passed in from our event
+            let animating_entity = animations.get_entity(&event.1).expect(format!("Entity Not Found in Map For {} animation make sure your adding every necessary component to the entity i.e `AnimationDirection`", event.0).as_str());
+            // info!("{} {:?} {:?}", event.0, event.1, new_animation_handle.id());
             // get the Arc pointer for the animation
-            let new_animation_arc = animating_entity.animations.get(event.0).expect(format!("No Animation Found For `{}` make sure the name matches your configuration", event.0).as_str());
+            let Some(new_animation_arc) = animating_entity.animations.get(event.0) else {
+                panic!("Animation `{}` not found for {:?} make sure the name matches your configuration", event.0, animating_entity.entity);
+            };
             // unlock the animation if we don't do this we will hit a deadlock whenever we try to unlock the Arc<Mutex<>>
             let mut new_animation = new_animation_arc.lock().unwrap();
             let mut blocking = false;
@@ -133,7 +126,7 @@ fn catch_animation_events(
                 }
                 else if let Some(curr_single_frame_animation) = curr_animation.single_frame_animation() {
                     // info!("{} {} {}", curr_single_frame_animation.blocking_priority, new_priority, curr_single_frame_animation.blocking_finished);
-                    if curr_single_frame_animation.blocking_priority > new_priority  && !curr_single_frame_animation.blocking_finished {
+                    if curr_single_frame_animation.blocking_priority > new_priority && !curr_single_frame_animation.blocking_finished {
                         // info!("blocking animation");
                         continue;
                     }
@@ -148,8 +141,9 @@ fn catch_animation_events(
             animating_entity.in_blocking_animation = blocking;
             
             sprite.index = sprite_index;
-            *texture_atlas = new_animation.get_atlas();
+            *texture_atlas = new_animation_handle;
         }
+        let animating_entity = animations.get_entity(&event.1).expect(format!("Entity Not Found in Map For {} animation make sure your adding every necessary component to the entity i.e `AnimationDirection`", event.0).as_str());
         animating_entity.curr_animation_called = true;
         // if our direction is changed we can set the current direction
         if animating_entity.curr_direction != *direction {
@@ -258,7 +252,7 @@ fn catch_reset_events(
     mut entities_to_remove: ResMut<EntitesToRemove>,
     mut animation_events: EventReader<ResetAnimationEvent>
 ) {
-    for event in animation_events.read() {
+    for event in animation_events.iter() {
         // if the entity wasn't found in the query we want to remove it from our data structure
         let (sprite, direction) = match query.get_mut(event.0) {
             Ok(q) => q,
@@ -302,7 +296,7 @@ fn catch_fx_animation_events(
     mut commands: Commands,
     mut animations: ResMut<Animations>
 ) {
-    for event in event_reader.read() {
+    for event in event_reader.iter() {
         let entity = commands.spawn(AnimationDirection::default()).id();
         let Ok(sprite_sheet_bundle) = animations.start_fx_animation(entity, event.0, event.1) else { 
             warn!("There was a problem spawning your FXAnimation {}", event.0);
@@ -312,6 +306,7 @@ fn catch_fx_animation_events(
         commands.entity(entity)
             .insert(sprite_sheet_bundle)
             .insert(FXAnimation)
+            .insert(Name::new("FX Animation"))
         ;
     }
 }
