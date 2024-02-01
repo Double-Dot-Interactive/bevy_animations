@@ -217,6 +217,10 @@ impl Animations {
     }
 
     /// Add an FX animation to a new [AnimatingEntity]. This will start the animation specified.
+    /// 
+    /// # Note
+    /// 
+    /// This method is used for the backend and shouldn't be called directly. If you need to start an fx animation use [FXAnimationEvent] instead.
     pub fn start_fx_animation(&mut self, key: Entity, animation: AnimationName, pos: Vec3) -> Result<SpriteSheetBundle, ()> {
         let name = animation;
         let Some(animation) = self.fx_animations.get(animation) else { return Err(()) };
@@ -309,7 +313,7 @@ impl Animations {
     /// returns [None] if the entity was not found 
     /// 
     /// useful for determining for example whether or not to initate another animation
-    pub fn doing_animations(&self, entity: Entity, animation_name: AnimationName) -> Option<bool> {
+    pub fn doing_animation(&self, entity: Entity, animation_name: AnimationName) -> Option<bool> {
         match self.entities.get(&entity) {
             // this is functionally the same as checking if the entity is in an animation
             Some(animating_entity) => Some(animating_entity.curr_animation_called && animating_entity.curr_animation.lock().unwrap().get_name() == animation_name),

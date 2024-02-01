@@ -164,7 +164,6 @@ fn catch_animation_events(
                 // if we didn't find the entity in the query we should remove it as it doesn't exist anymore
                 if !animation_entity.fx_animation {
                     entities_to_remove.0.push(*entity);
-                    info!("removing entity");
                 }
                 continue;
             }
@@ -222,7 +221,6 @@ fn catch_animation_events(
         else if let Some(linear_transform_animation) = curr_animation.linear_transform_animation() {
             if let None = linear_transform_animation.cycle_animation(
                 sprite,
-                &animation_entity.last_valid_direction,
                 transform,
                 config.pixels_per_meter) {
                     if animation_entity.fx_animation {
@@ -283,10 +281,14 @@ fn catch_reset_events(
         }
         // if it is linear transform based
         else if let Some(linear_transform_animation) = curr_animation.linear_transform_animation() {
-            linear_transform_animation.reset_animation(Some(sprite), Some(direction));
+            linear_transform_animation.reset_animation(Some(sprite));
+        }
+        // if it is single frame based
+        else if let Some(single_frame_animation) = curr_animation.single_frame_animation() {
+            single_frame_animation.reset_animation(Some(sprite), Some(direction));
         }
         else {
-            panic!("Something went terribly wrong getting the current animation");
+            panic!("Something went terribly wrong resetting the current animation");
         }
     }
 }

@@ -22,26 +22,26 @@ use crate::*;
 ///                    ..Default::default()
 ///                }).id();
 ///            animations.insert_animation(
-///                entity, // the entity is needed to determine which `Handle<TextureAtlas>` is being manipulated
-///                AnimationType::Timed(
-///                    TimedAnimation::new(
-///                        /* animation_frames */ vec![0, 1, 2, 3], // the x index for your frames to cycle through
-///                        /* frame_timings_in_secs */ vec![0.001, 0.5, 0.5, 0.5] // Note that the the first timing is set to 0.001 so the animation starts immediately. If this value doesn't suit your needs, you can change it to another parameter.
-///                        /* handle */ texture_atlas_handle, // your sprite sheet
-///                        /* frame */ Vec2::new(4., 4.), // the length and height of your sprite sheet
-///                        /* direction_indexes */ AnimationDirectionIndexes::IndexBased(IndexBasedDirection {
-///                            left: 1,
-///                            right: 1,
-///                            up: 1,
-///                            down: 1
-///                        }), // the indexes to determine the correct sprite for the direction
-///                        /* repeating */ true, // if the animation is repeating or not
-///                        /* blocking */ false, // if the animation should block others
-///                        /* blocking_priority */ 1 // the blocking_priority hierarchy assignment to determine which animations should block eachother
-///                    ),
-///                    "player_running" // the name of the animation. will be used when sending an `AnimationEvent`
-///                )
-///           );
+///                 NewAnimation {
+///                     handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
+///                     animation: AnimationType::Timed(
+///                         TimedAnimation::new(
+///                             Vec::from(PLAYER_RUNNING_FRAMES), /* animation_frames */
+///                             Vec::from(PLAYER_RUNNING_TIMINGS), /* frame_timings_in_secs */
+///                             Vec2::new(14., 38.), /* frame */
+///                             AnimationDirectionIndexes::FlipBased(FlipBasedDirection { /* direction_indexes */
+///                                 left_direction_is_flipped: true,
+///                                 x_direction_index: 3,
+///                             }),
+///                             true, /* repeating */
+///                             false, /* blocking */
+///                             0 /* blocking_priory */
+///                         ),
+///                         "player_running", /* AnimationName */
+///                     ),
+///                 },
+///                 Some(entity), /* specify an entity to add the animation to now instead of later */
+///             )
 ///       }
 /// ```
 #[derive(Clone, Debug, Default)]
@@ -266,24 +266,24 @@ impl TimedAnimation {
 ///                    ..Default::default()
 ///                }).id();
 ///            animations.insert_animation(
-///                entity, // the entity is needed to determine which `Handle<TextureAtlas>` is being manipulated
-///                AnimationType::Transform(
-///                    TransformAnimation::new(
-///                        /* animation_frames */ vec![0, 1, 2, 3], // the x index for your frames to cycle through
-///                        /* meters_per_frame */ 0.55, // your desired meters per frame
-///                        /* handle */ texture_atlas_handle, // your sprite sheet
-///                        /* frame */ Vec2::new(4., 4.), // the length and height of your sprite sheet
-///                        /* direction_indexes */ AnimationDirectionIndexes::IndexBased(IndexBasedDirection {
-///                            left: 1,
-///                            right: 1,
-///                            up: 1,
-///                            down: 1
-///                        }), // the indexes to determine the correct sprite for the direction
-///                        /* repeating */ true, // if the animation is repeating or not
-///                    ),
-///                    "player_running" // the name of the animation. will be used when sending an `AnimationEvent`
-///                )
-///           );
+///                NewAnimation {
+///                     handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
+///                     animation: AnimationType::Timed(
+///                         TransformAnimation::new(
+///                             Vec::from(PLAYER_RUNNING_FRAMES), /* animation_frames */
+///                             PLAYER_RUNNING_METERS_PER_FRAME, /* meters_per_frame */
+///                             Vec2::new(14., 38.), /* frame */
+///                             AnimationDirectionIndexes::FlipBased(FlipBasedDirection { /* direction_indexes */
+///                                 left_direction_is_flipped: true,
+///                                 x_direction_index: 3,
+///                             }),
+///                             true, /* repeating */
+///                         ),
+///                         "player_running", /* AnimationName */
+///                     ),
+///                 },
+///                 Some(entity), /* specify an entity to add the animation to now instead of later */
+///             )
 ///       }
 /// ```
 ///
@@ -489,18 +489,19 @@ impl TransformAnimation {
 ///                    ..Default::default()
 ///                }).id();
 ///            animations.insert_animation(
-///                entity, // the entity is needed to determine which `Handle<TextureAtlas>` is being manipulated
-///                AnimationType::LinearTimed(
-///                    LinearTimedAnimation::new(
-///                        /* animation_frames */ vec![0, 1, 2, 3], // the x index for your frames to cycle through
-///                        /* frame_timings_in_secs */ vec![0.001, 0.5, 0.5, 0.5] // Note that the the first timing is set to 0.001 so the animation starts immediately. If this value doesn't suit your needs, you can change it to another parameter.
-///                        /* handle */ texture_atlas_handle, // your sprite sheet
-///                        /* frame */ Vec2::new(4., 4.), // the length and height of your sprite sheet
-///                        /* repeating */ true, // if the animation is repeating or not
-///                    ),
-///                    "player_running" // the name of the animation. will be used when sending an `AnimationEvent`
-///                )
-///           );
+///                 NewAnimation {
+///                     handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
+///                     animation: AnimationType::LinearTimed(
+///                         LinearTimedAnimtion::new(
+///                             Vec::from(PLAYER_RUNNING_FRAMES), /* animation_frames */
+///                             Vec::from(PLYAER_FRAME_TIMING), /* frame_timings_in_secs */
+///                             true, /* repeating */
+///                         ),
+///                         "player_running", /* AnimationName */
+///                     ),
+///                 },
+///                 Some(entity), /* specify an entity to add the animation to now instead of later */
+///             );
 ///       }
 /// ```
 #[derive(Debug, Default, Clone)]
@@ -622,36 +623,28 @@ impl LinearTimedAnimation {
 ///                    ..Default::default()
 ///                }).id();
 ///            animations.insert_animation(
-///                entity, // the entity is needed to determine which `Handle<TextureAtlas>` is being manipulated
-///                AnimationType::LinearTransform(
-///                    LinearTransformAnimation::new(
-///                        /* animation_frames */ vec![0, 1, 2, 3], // the x index for your frames to cycle through
-///                        /* meters_per_frame */ 0.55, // your desired meters per frame
-///                        /* handle */ texture_atlas_handle, // your sprite sheet
-///                        /* frame */ Vec2::new(4., 4.), // the length and height of your sprite sheet
-///                        /* direction_indexes */ AnimationDirectionIndexes::IndexBased(IndexBasedDirection {
-///                            left: 1,
-///                            right: 1,
-///                            up: 1,
-///                            down: 1
-///                        }), // the indexes to determine the correct sprite for the direction
-///                        /* repeating */ true, // if the animation is repeating or not
-///                    ),
-///                    "player_running" // the name of the animation. will be used when sending an `AnimationEvent`
-///                )
-///           );
+///                 NewAnimation {
+///                     handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
+///                     animation: AnimationType::LinearTransform(
+///                         LinearTransformAnimation::new(
+///                             Vec::from(PLAYER_RUNNING_FRAMES), /* animation_frames */
+///                             PLAYER_METERS_PER_FRAME, /* meters_per_frame */
+///                             true, /* repeating */
+///                         ),
+///                         "player_running", /* AnimationName */
+///                     ),
+///                 },
+///                 Some(entity), /* specify an entity to add the animation to now instead of later */
+///             )
 ///       }
 /// ```
 #[derive(Debug, Default, Clone)]
 pub struct LinearTransformAnimation {
     animation_tick: usize,
     previous_transform: Transform,
-    previous_dir_index: usize,
     pub animation_frames: Vec<usize>,
     pub meters_per_frame: f32,
-    pub frame: Vec2,
     pub repeating: bool,
-    pub direction_indexes: AnimationDirectionIndexes,
 }
 
 #[allow(unused)]
@@ -659,18 +652,13 @@ impl LinearTransformAnimation {
     fn new(
         animation_frames: Vec<usize>,
         meters_per_frame: f32,
-        frame: Vec2,
-        direction_indexes: AnimationDirectionIndexes,
         repeating: bool,
     ) -> Self {
         Self {
             animation_tick: 1,
-            previous_dir_index: 0,
             previous_transform: Transform::from_xyz(0., 0., 0.),
             animation_frames,
             meters_per_frame,
-            frame,
-            direction_indexes,
             repeating,
         }
     }
@@ -687,46 +675,8 @@ impl LinearTransformAnimation {
         false
     }
 
-    #[allow(unused)]
-    fn get_y_index(&self, direction: &AnimationDirection) -> YIndex {
-        match (direction, self.direction_indexes) {
-            (AnimationDirection::Left, AnimationDirectionIndexes::IndexBased(index)) => {
-                YIndex::Index(index.left)
-            }
-            (AnimationDirection::Right, AnimationDirectionIndexes::IndexBased(index)) => {
-                YIndex::Index(index.right)
-            }
-            (AnimationDirection::Up, AnimationDirectionIndexes::IndexBased(index)) => {
-                YIndex::Index(index.up)
-            }
-            (AnimationDirection::Down, AnimationDirectionIndexes::IndexBased(index)) => {
-                YIndex::Index(index.down)
-            }
-            (AnimationDirection::Left, AnimationDirectionIndexes::FlipBased(index)) => {
-                YIndex::Flip(index.left_direction_is_flipped, index.x_direction_index)
-            }
-            (AnimationDirection::Right, AnimationDirectionIndexes::FlipBased(index)) => {
-                YIndex::Flip(!index.left_direction_is_flipped, index.x_direction_index)
-            }
-            (_, AnimationDirectionIndexes::FX(fx_based_animation)) => {
-                YIndex::Index(fx_based_animation.index)
-            }
-            (AnimationDirection::Still, _) => YIndex::Index(self.previous_dir_index),
-            (_, _) => YIndex::Index(1),
-        }
-    }
-
-    pub fn sprite_index(&mut self, direction: &AnimationDirection) -> usize {
-        let x_index = match self.get_x_index() {
-            Some(index) => index,
-            None => 0,
-        };
-        let y_index = match self.get_y_index(direction) {
-            YIndex::Index(y_index) => y_index,
-            YIndex::Flip(_, y_index) => y_index,
-        };
-        // Some((y_index * self.frame.y as usize) - (self.frame.x as usize - x_index))
-        y_index * self.frame.x as usize + x_index
+    pub fn sprite_index(&mut self, _direction: &AnimationDirection) -> usize {
+        if let Some(index) = self.get_x_index() { index } else { 0 }
     }
 
     fn get_x_index(&mut self) -> Option<usize> {
@@ -745,7 +695,6 @@ impl LinearTransformAnimation {
     pub fn cycle_animation(
         &mut self,
         mut sprite: Mut<TextureAtlasSprite>,
-        direction: &AnimationDirection,
         transform: Mut<Transform>,
         pixels_per_meter: f32,
     ) -> Option<()> {
@@ -756,29 +705,14 @@ impl LinearTransformAnimation {
                 None => return None,
             };
 
-            let y_index = match self.get_y_index(direction) {
-                YIndex::Index(y_index) => y_index,
-                YIndex::Flip(flipped, y_index) => {
-                    sprite.flip_x = flipped;
-                    y_index
-                }
+            let x_index = match self.get_x_index() {
+                Some(index) => index,
+                None => return None,
             };
 
-            self.previous_dir_index = y_index;
-
-            // let index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
-            let index = y_index * self.frame.x as usize + x_index;
-
-            sprite.index = index;
+            sprite.index = x_index;
 
             self.animation_tick += 1;
-            return Some(());
-        } else if *direction == AnimationDirection::Still {
-            let x_index = self.animation_frames.get(0).unwrap();
-
-            let y_index = self.previous_dir_index;
-
-            sprite.index = y_index * self.frame.x as usize + x_index;
             return Some(());
         }
         Some(())
@@ -791,25 +725,14 @@ impl LinearTransformAnimation {
         false
     }
 
-    pub fn reset_animation(
-        &mut self,
-        sprite: Option<Mut<TextureAtlasSprite>>,
-        direction: Option<&AnimationDirection>,
-    ) {
+    #[allow(unused)]
+    pub fn reset_animation(&mut self, mut sprite: Option<Mut<TextureAtlasSprite>>) {
         self.animation_tick = 1;
-        if let (Some(mut sprite), Some(direction)) = (sprite, direction) {
+        if let Some(mut sprite) = sprite {
             let x_index = self
                 .get_x_index()
                 .expect("Something Went Wrong Reseting Animation");
-            match self.get_y_index(direction) {
-                YIndex::Index(y_index) => {
-                    sprite.index = y_index * self.frame.x as usize + x_index;
-                }
-                YIndex::Flip(flip, y_index) => {
-                    sprite.flip_x = flip;
-                    sprite.index = y_index * self.frame.x as usize + x_index;
-                }
-            }
+            sprite.index = x_index
         }
     }
 }
@@ -818,41 +741,44 @@ impl LinearTransformAnimation {
 /// 
 /// # Example
 /// ```rust
-///        fn init_animation(
-///            mut animations: ResMut<Animations>,
-///            mut commands: Commands,
-///            asset_server: ResMut<AssetServer>,
-///            mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-///            ) {
-///            let asset = asset_server.load("path/to/your/sprite_sheet");
+///    fn init_animation(
+///        mut animations: ResMut<Animations>,
+///        mut commands: Commands,
+///        asset_server: ResMut<AssetServer>,
+///        mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+///        ) {
+///        let asset = asset_server.load("path/to/your/sprite_sheet");
 ///
-///            let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
+///        let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
 ///
-///            let texture_atlas_handle = texture_atlases.add(texture_atlas);
+///        let texture_atlas_handle = texture_atlases.add(texture_atlas);
 ///
-///            let entity = commands.spawn(AnimationDirection::default())
-///                .insert(SpriteSheetBundle {
-///                    texture_atlas: texture_atlas_handle.clone(),
-///                    ..Default::default()
-///                }).id();
-///            animations.insert_animation(
-///                entity, // the entity is needed to determine which `Handle<TextureAtlas>` is being manipulated
-///                AnimationType::SingleFrame(
-///                    SingleFrameAnimation::new(
-///                        /* blocking */ true, // if the animation should block others
-///                        /* blocking_priority */ 1, // the priority at which it will block other blocking animations
-///                        /* blocking_duration_in_sec */ 0.15, // the duration of the blocking timer because a single frame animation doesn't have timed frames
-///                        /* frame */ Vec2::new(4., 4.), // the length and height of your sprite sheet
-///                        /* x_index_pos */ 0 // the x position of the single frame you want rendered by 0th index
-///                        /* direction_indexes */ AnimationDirectionIndexes::IndexBased(FlipBased {
-///                            x_direction_is_flipped: true, // if the left direction is a flipped sprite
-///                            x_direction_index: 0, // to Determine which Index the Horizontal Directions Sprites are 
-///                        }), // the indexes to determine the correct sprite for the direction
-///                    ),
-///                    "player_fall" // the name of the animation. will be used when sending an `AnimationEvent`
-///                )
-///           );
-///       }
+///        let entity = commands.spawn(AnimationDirection::default())
+///            .insert(SpriteSheetBundle {
+///                texture_atlas: texture_atlas_handle.clone(),
+///                ..Default::default()
+///            }).id();
+///        animations.insert_animation(
+///             NewAnimation {
+///                 handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
+///                 animation: AnimationType::SingleFrame(
+///                     SingleFrameAnimation::new(
+///                         0, /* x_index_pos */
+///                         AnimationDirectionIndexes::IndexBased(FlipBased { /* direction_indexes */
+///                             x_direction_is_flipped: true,
+///                             x_direction_index: 0,
+///                         }),
+///                         true, /* blocking */
+///                         1, /* blocking_priority */
+///                         0.25, /* blocking_duration_in_sec */
+///                         Vec2::new(4., 4.) /* frame */
+///                     ),
+///                     "jump_start", /* AnimationName */
+///                ),
+///            },
+///            Some(entity), /* specify an entity to add the animation to now instead of later */
+///      )
+///   }
 /// ```
 #[derive(Debug, Default, Clone)]
 pub struct SingleFrameAnimation {
@@ -868,12 +794,12 @@ pub struct SingleFrameAnimation {
 
 impl SingleFrameAnimation {
     pub fn new(
+        x_index_pos: usize, 
+        direction_indexes: AnimationDirectionIndexes,
         blocking: bool, 
         blocking_priority: i32,
         blocking_duration_in_sec: f32,
         frame: Vec2,
-        x_index_pos: usize, 
-        direction_indexes: AnimationDirectionIndexes,
     ) -> Self {
         Self { 
             blocking,

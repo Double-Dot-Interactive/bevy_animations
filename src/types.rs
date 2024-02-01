@@ -199,7 +199,7 @@ impl AnimationType {
             AnimationType::Timed(animation, _) => animation.reset_animation(None, None),
             AnimationType::Transform(animation, _) => animation.reset_animation(None, None),
             AnimationType::LinearTimed(animation, _) => animation.reset_animation(None),
-            AnimationType::LinearTransform(animation, _) => animation.reset_animation(None, None),
+            AnimationType::LinearTransform(animation, _) => animation.reset_animation(None),
             AnimationType::SingleFrame(animation, _) => animation.reset_animation(None, None),
             AnimationType::None => panic!("Something went terribly wrong"),
         }
