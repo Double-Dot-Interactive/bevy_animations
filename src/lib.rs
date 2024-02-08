@@ -27,6 +27,7 @@ pub mod prelude {
         YIndex,
         NewAnimation,
         AnimationType,
+        Animator
     };
     pub use crate::{AnimationsConfig, Animations};
 }

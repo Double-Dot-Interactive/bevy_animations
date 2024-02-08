@@ -38,7 +38,7 @@ impl Plugin for AnimationsPlugin {
             .add_event::<FXAnimationEvent>()
             .insert_resource(Animations::default())
             .insert_resource(EntitesToRemove::default())
-            .add_systems(Update, (
+            .add_systems((
                 catch_fx_animation_events,
                 // fx_ani,
                 catch_animation_events,
@@ -67,7 +67,7 @@ fn catch_animation_events(
     mut commands: Commands
 ) {
     // our main event loop
-    for event in animation_events.read() {
+    for event in animation_events.iter() {
         if !animations.has_entity(&event.1) {
             panic!("Entity Not Found in Map For {} animation make sure your adding every necessary component to the entity i.e `AnimationDirection`", event.0);
         }
@@ -251,7 +251,7 @@ fn catch_reset_events(
     mut entities_to_remove: ResMut<EntitesToRemove>,
     mut animation_events: EventReader<ResetAnimationEvent>
 ) {
-    for event in animation_events.read() {
+    for event in animation_events.iter() {
         // if the entity wasn't found in the query we want to remove it from our data structure
         let (sprite, animator) = match query.get_mut(event.0) {
             Ok(q) => q,
@@ -300,7 +300,7 @@ fn catch_fx_animation_events(
     mut commands: Commands,
     mut animations: ResMut<Animations>
 ) {
-    for event in event_reader.read() {
+    for event in event_reader.iter() {
         let entity = commands.spawn(Animator::default()).id();
         let Ok(sprite_sheet_bundle) = animations.start_fx_animation(entity, event.0, event.1) else { 
             warn!("There was a problem spawning your FXAnimation {}", event.0);

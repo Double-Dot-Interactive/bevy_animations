@@ -235,7 +235,7 @@ impl AnimationType {
 /// * **Note** that you can send an event of the same name multiple times even while an animation is in progress without ruining it
 ///
 /// * **Note** an animation that has been sent will animate till end or repeat forever
-#[derive(Debug, Event)]
+#[derive(Debug)]
 pub struct AnimationEvent(pub AnimationName, pub Entity);
 
 /// Send a request to reset the animation of an `Entity`
@@ -258,16 +258,16 @@ pub struct AnimationEvent(pub AnimationName, pub Entity);
 /// ```
 /// 
 /// * **Note** this will overwrite an animation request in the same frame
-#[derive(Debug, Event)]
+#[derive(Debug)]
 pub struct ResetAnimationEvent(pub Entity);
 
 /// Send a request to start an FX animation. This will spawn a new animation for and FX then immediately despawn it
 /// 
 /// Needs the `AnimationName` and the position to spawn the new FX animation at
-#[derive(Debug, Event)]
+#[derive(Debug)]
 pub struct FXAnimationEvent(pub AnimationName, pub Vec3);
 
-#[derive(Debug, PartialEq, Eq, Clone, Default, Component)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub enum AnimationDirection {
     #[default]
     Still,
