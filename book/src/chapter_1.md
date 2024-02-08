@@ -38,4 +38,14 @@ fn main() {
 
 The `pixels_per_meter` will be used to determine how far an entity has gone for some of the `Transform` based animations you'll learn about later
 
+Additionally you can make your entity able to be animated via adding the [Animator](https://docs.rs/bevy_animations/latest/bevy_animations/struct.Animator.html) component to it.
+
+```rust
+fn spawn_player(
+    mut commands: Commands
+) {
+    commands.spawn(Animator::default());
+}
+```
+
 ## [Coninue To Next Chapter ->](./chapter_2.md)

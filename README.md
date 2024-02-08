@@ -1,11 +1,16 @@
 # bevy_animations is a Lightweight 2d animations engine built for Bevy
 
-## What bevy_animations accomplishes
-1. using bevy_animations is easy and the animation configurations are simple
+Bevy Animations is still in beta and may incurr major API and backend changes in the future.
 
-2. bevy_animations is fast enough to handle all of the entities you want animated
+## What bevy_animations accomplishes
+
+* Fully incorporated with Bevy ECS
+* Easy to use builder pattern syntax
+* Creates animations to use on entities with custom configuration
+* Automatic dropping of animating entites
 
 ### Add bevy_animations to your Bevy App
+
 ```rust
 use bevy_animations::AnimationsPlugin;
 use bevy::prelude::*;
@@ -21,9 +26,10 @@ fn main() {
 ```
 
 ### How bevy_animations animations work
+
 * specified timings or `meters_per_frame` for each frame
 * user defining which y indexes are left, right, up and down facing sprites or if the sprites should be flipped instead
-* timed animations can block others from happening
+* certain animations can block others from happening
 * utilizing a priortity based system so you can define multiple ***blocking*** animations with different priorities to render
 
 ### How to define a bevy_animations animation
@@ -39,7 +45,7 @@ fn entity_setup(
     animations: ResMut<Animations>
 ) {
     let entity = commands.spawn(
-        AnimationDirection::Still // the `AnimationDirection` component is needed on the entity to determine the direction
+        Animator::default(), // the `AnimationDirection` component is needed on the entity to determine the direction
         SpriteSheetBundle {
             texture_atlas: // your sprite sheet handle
             transform: Transform::from_xyz(0., 0., 0.) // your desired location in the `World`
@@ -48,7 +54,6 @@ fn entity_setup(
     );
 }
 ```
-**Note** if you are using a one directional sprite you still **NEED** to add the `AminationDirection` component
 
 **Note** if you don't add the `AnimationDirection` component to your entity it will seem as though your animations will never be inserted because `bevy_animations` is looking for the
 `AnimationDirection` component in it's `Query`s
@@ -57,52 +62,58 @@ fn entity_setup(
 
 ```rust
 animations.insert_animation(
-    entity.id(), // the entity is needed to determine which `Handle<TextureAtlas>` is being manipulated
-    AnimationType::Transform(
-        TransformAnimation::new(
-            /* animation_frames */ vec![0, 1, 2, 3] // the x index for your frames to cycle through
-            /* meters_per_frame */ 0.55 // your desired meters per frame
-            /* handle */ texture_atlas_hanle // your sprite sheet
-            /* frame */ Vec2::new(4., 4.) // the length and height of your sprite sheet
-            /* direction_indexes */ AnimationDirectionIndexes::IndexBased(IndexBasedDirection { 
-                left: 1,
-                right: 1,
-                up: 1,
-                down: 1 
-            }), // the indexes to determine the correct sprite for the direction
-            /* repeating */ true // if the animation is repeating or not
-        )
-    ),
-    "player_running" // the name of the animation. will be used when sending an `AnimationEvent`
+    NewAnimation {
+        handle: player_movement_texture.clone(), /* the handle for the TextureAtlas */
+        animation: AnimationType::Timed(
+            TransformAnimation::new(
+                    Vec::from(PLAYER_RUNNING_FRAMES), /* animation_frames */
+                    PLAYER_RUNNING_METERS_PER_FRAME, /* meters_per_frame */
+                    Vec2::new(14., 38.), /* frame */
+                    AnimationDirectionIndexes::FlipBased(FlipBasedDirection { /* direction_indexes */
+                        left_direction_is_flipped: true,
+                        x_direction_index: 3,
+                    }),
+                    true, /* repeating */
+                ),
+                "player_running", /* AnimationName */
+        ),
+    },
+    Some(player_entity), /* specify an entity to add the animation to now instead of later */
 )
 ```
-**Note** if you have a one directional animation you can use `AnimationDirectionIndexes::default()` or set everything to 1 `AnimationDirectionIndexes::new(1, 1, 1, 1)`
+
+**Note** if you have a one directional animation you can use `AnimationDirectionIndexes::one_directional()`
 
 **Note** it is on you to make sure you are passing the correct strings to bevy_animations to animate your entity
 
 #### You can also add a `TimedAnimation` like this
+
 ```rust
-animations.insert_animation(entity.id(), AnimationType::Timed(
-    TimedAnimation::new(
-        /* animation_frames */ vec![0, 1, 2, 3] // the x index for your frames to cycle through, 
-        /* frame_timings_in_secs */ vec![0.001, 0.300, 0.300, 0.250], // Note that the the first timing is set to 0.001 so the animation starts immediately. If this value doesn't suit your needs, you can change it to another parameter.
-        /* handle */ texture_atlas_hanle // your sprite sheet
-        /* frame */ Vec2::new(4., 4.) // the length and height of your sprite sheet 
-        /* direction_indexes */ AnimationDirectionIndexes::IndexBased(IndexBasedDirection { 
-                left: 1,
-                right: 1,
-                up: 1,
-                down: 1 
-        }), // the indexes to determine the correct sprite for the direction
-        /* repeating */ true // if the animation is repeating or not
-        /* blocking */ true, // if the animation should block others
-        /* blocking_priority */ 1 // the priority for which animation should block other blocking animations
-    ),
-    "player_die" // the name of the animation. will be used when sending an `AnimationEvent`
-))
+animations.insert_animation(
+    NewAnimation {
+        handle: player_movement_texture.clone(), /* the handle for the TextureAtlas */
+        animation: AnimationType::Timed(
+            TimedAnimation::new(
+                    Vec::from(PLAYER_RUNNING_FRAMES), /* animation_frames */
+                    Vec::from(PLAYER_RUNNING_TIMINGS), /* frame_timings_in_secs */
+                    Vec2::new(14., 38.), /* frame */
+                    AnimationDirectionIndexes::FlipBased(FlipBasedDirection { /* direction_indexes */
+                        left_direction_is_flipped: true,
+                        x_direction_index: 3,
+                    }),
+                    true, /* repeating */
+                    false, /* blocking */
+                    0 /* blocking_priory */
+                ),
+                "player_running", /* AnimationName */
+        ),
+    },
+    Some(player_entity), /* specify an entity to add the animation to now instead of later */
+)
 ```
 
 #### We can then start an animation by sending it over an `EventWriter<AnimationEvent>` like this
+
 ```rust
 fn move_player(
     mut event_writer: EventWriter<AnimationEvent>,
@@ -119,23 +130,26 @@ fn move_player(
 * **Note** an animation that has been sent will animate till end or repeat forever
 
 #### If you want to change the direction of the animation you will query it from the `AnimatingEntity` like this
+
 ```rust
 fn move_player(
     mut event_writer: EventWriter<AnimationEvent>,
-    mut query: Query<&mut AnimationDirection, With<Player>> // specify the `With` to get the entity associated with your custom component 
+    mut query: Query<&mut Animator, With<Player>> // specify the `With` to get the entity associated with your custom component 
 ) {
     // your move logic here...
 
-    let mut direction = query.single_mut(); // get the direction via query
+    let mut animator = query.single_mut(); // get the direction via query
 
-    direction = AnimationDirection::Left; // the direction can be changed like this
+    animator.change_direction(AnimationDirection::Left); // the direction can be changed like this
 
     event_writer.send(AnimationEvent("player_running", entity));
 }
 ```
+
 * **Note** if you send an event with a different name the current animation of the entity will change immediately unless the current animation is blocking or has a higher priority.
 
 #### Knowing this you can change the `player_running` animation to `player_die` in another system where you could check collisions like this
+
 ```rust
 fn check_collisions(
     mut commands: Commands,
@@ -163,6 +177,7 @@ fn check_collisions(
 * **Note** there is no functionality internally yet for doing a task like despawning an entity only after an animation is finished. This can be accomplished on your own however.
 
 ### Versioning
+
 | bevy  | bevy_animations  |
 | ----- | ---------------  |
 | 0.12.x | 0.5.x             |
@@ -171,8 +186,9 @@ fn check_collisions(
 | 0.9.x  | 0.2.x             |
 
 ### More Documentation
-If you need more in depth Documentation and more examples for all of the current implementations visit the
-[api docs](https://docs.rs/bevy_animations/latest/bevy_animations/)
- 
+
+If you need more in depth Documentation and more examples for all of the current implementations read the [bevy_animations book](https://github.com/Double-Dot-Interactive/bevy_animations/tree/master/book/src/README.md) or visit the [api docs](https://docs.rs/bevy_animations/latest/bevy_animations/)
+
 ### Open Source
+
 bevy_animations is open-source forever. You can contribute via the [`GitHub Repo`](https://github.com/Double-Dot-Interactive/bevy_animations)

@@ -2,15 +2,17 @@
 
 We will talk about the major features that the API provides for getting information about animations, inserting animations, starting animations, etc.
 
-This will be a lengthy chapter that will give some examples of use cases for each element of the API to hopefully help with comprehension.
+This is a lengthy chapter that will give some examples of use cases for each element of the API to hopefully help with comprehension.
 
-There are three main areas of the API that should be interacted with.
+There are four main areas of the API that should be interacted with.
 
-* Initilization which was talked about in [chapter_1](./chapter_1.md)
-* Interacting with the [Animations](https://docs.rs/bevy_animations/latest/bevy_animations/struct.Animations.html) resource. Which will be used to create animations, add animations to entities, and get information about animations like if they're playing or not.
-* Starting and Reseting animations via [AnimationEvent](https://docs.rs/bevy_animations/latest/bevy_animations/struct.AnimationEvent.html), [FXAnimationEvent](https://docs.rs/bevy_animations/latest/bevy_animations/struct.FXAnimationEvent.html), and [ResetAnimationEvent](https://docs.rs/bevy_animations/latest/bevy_animations/struct.ResetAnimationEvent.html)
+[1.](./chapter_1.md) Initilization which was talked about in [chapter_1](./chapter_1.md)
 
-There is also an arbitrary way of interacting with the API via [AnimationDirection](https://docs.rs/bevy_animations/latest/bevy_animations/enum.AnimationDirection.html). When the [AnimationDirection](https://docs.rs/bevy_animations/latest/bevy_animations/enum.AnimationDirection.html) is changed, the direction of the sprite will change based off of your configuration for the animation itself.
+[2.](#animations-resource) Interacting with the [Animations](https://docs.rs/bevy_animations/latest/bevy_animations/struct.Animations.html) resource. Which will be used to create animations, add animations to entities, and get information about animations like if they're playing or not.
+
+[3.](#animation-events) Starting and Reseting animations via [AnimationEvent](https://docs.rs/bevy_animations/latest/bevy_animations/struct.AnimationEvent.html), [FXAnimationEvent](https://docs.rs/bevy_animations/latest/bevy_animations/struct.FXAnimationEvent.html), and [ResetAnimationEvent](https://docs.rs/bevy_animations/latest/bevy_animations/struct.ResetAnimationEvent.html)
+
+[4.](#direction-change) Changing the direction of an animation via the [Animator](https://docs.rs/bevy_animations/latest/bevy_animations/struct.Animator.html) component
 
 ## Animations Resource
 
@@ -296,5 +298,35 @@ fn animate_player(
 ```
 
 In this example we are defining a system that will reset the `player_attack` animation if the player gets hit while they are attacking and also while the user is trying to attack again (they are holding the key down). This would be functionally important for your game if you want the player to stop the attack animation if they get hit.
+
+## Direction change
+
+To change the direction of the animation you will need to query the [Animator](https://docs.rs/bevy_animations/latest/bevy_animations/struct.Animator.html) component and use the [change_direction() method](https://docs.rs/bevy_animations/latest/bevy_animations/struct.Animator.html#method.change_direction) to change the [AnimationDirection](https://docs.rs/bevy_animations/latest/bevy_animations/struct.AnimationDirection.html) of the entity
+
+Here is how you can accomplish this
+
+```rust
+fn player_direction(
+    mut query: Query<&mut Animator, With<Player>>,
+    input: Res<Input>
+) {
+    for mut animator in query.iter_mut() {
+        if input.pressed(KeyCode::A) {
+            animator.changed_direction(AnimationDirection::Left);
+        }
+        else if input.pressed(KeyCode::S) {
+            animator.changed_direction(AnimationDirection::Down);
+        }
+        else if input.pressed(KeyCode::D) {
+            animator.changed_direction(AnimationDirection::Right);
+        }
+        else if input.pressed(KeyCode::W) {
+            animator.changed_direction(AnimationDirection::Up);
+        }
+    }
+}
+```
+
+Here we define a simple method that will change the direction of the animation based off of the users input.
 
 ## [Coninue To Next Chapter ->](./chapter_4.md)

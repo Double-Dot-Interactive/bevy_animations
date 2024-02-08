@@ -56,7 +56,19 @@ pub type AnimationName = &'static str;
 pub enum AnimationDirectionIndexes {
     IndexBased(IndexBasedDirection),
     FlipBased(FlipBasedDirection),
-    FX(FXBasedDirection)
+    FX(FXBasedDirection),
+}
+
+impl AnimationDirectionIndexes {
+    pub fn one_directional() -> Self {
+        Self::IndexBased(IndexBasedDirection { left: 1, right: 1, up: 1, down: 1 }) 
+    }
+}
+
+impl Default for AnimationDirectionIndexes {
+    fn default() -> Self {
+        Self::IndexBased(IndexBasedDirection { left: 1, right: 1, up: 1, down: 1 }) 
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -102,17 +114,6 @@ pub enum YIndex {
     Flip(bool, usize)
 }
 
-// impl AnimationDirectionIndexes {
-//     pub fn new(left: usize, right: usize, up: usize, down: usize) -> Self{
-//         Self { left, right, up, down }
-//     }
-// }
-
-impl Default for AnimationDirectionIndexes {
-    fn default() -> Self {
-        Self::IndexBased(IndexBasedDirection { left: 1, right: 1, up: 1, down: 1 }) 
-    }
-}
 
 #[derive(Debug, Component, Clone, Default)]
 pub struct Animation {
@@ -292,3 +293,20 @@ impl AnimationDirection {
         }
     }
 }
+
+#[derive(Debug, PartialEq, Eq, Clone, Default, Component)]
+pub struct Animator {
+    direction: AnimationDirection
+}
+
+impl Animator {
+    pub fn change_direction(&mut self, direction: AnimationDirection) -> &mut Self {
+        self.direction = direction;
+        self
+    }
+
+    pub fn get_direction(&self) -> &AnimationDirection {
+        &self.direction
+    }
+}
+

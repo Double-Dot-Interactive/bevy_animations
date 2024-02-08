@@ -58,7 +58,7 @@ fn catch_animation_events(
         &mut Handle<TextureAtlas>,
         &mut TextureAtlasSprite,
         &mut Transform,
-        &AnimationDirection
+        &Animator
     )>,
     mut animations: ResMut<Animations>,
     mut entities_to_remove: ResMut<EntitesToRemove>,
@@ -75,7 +75,7 @@ fn catch_animation_events(
             panic!("Animation {} not found", event.0);
         }
         // query the texture the sprite and the current direction of the entity
-        let (mut texture_atlas, mut sprite, _, direction) = match query.get_mut(event.1) {
+        let (mut texture_atlas, mut sprite, _, animator) = match query.get_mut(event.1) {
             Ok(handle) => handle,
             Err(_) => {
                 // if we didn't find the entity from the query it doesn't exist anymore and should be removed via the remove_entites system
@@ -83,6 +83,7 @@ fn catch_animation_events(
                 continue;
             }
         };
+        let direction = animator.get_direction();
         // if incoming event is new 
         if animations.new_animation(event.0, &event.1).expect(format!("Something Went Terribly Wrong Getting New Animation For {}", event.0).as_str()) {
             let new_animation_handle = animations.get_handle(event.0).expect(format!("Something Went Terribly Wrong Getting Animation For {}", event.0).as_str());
@@ -244,7 +245,7 @@ fn catch_animation_events(
 fn catch_reset_events(
     mut query: Query<(
         &mut TextureAtlasSprite,
-        &AnimationDirection
+        &Animator
     )>,
     mut animations: ResMut<Animations>,
     mut entities_to_remove: ResMut<EntitesToRemove>,
@@ -252,13 +253,14 @@ fn catch_reset_events(
 ) {
     for event in animation_events.iter() {
         // if the entity wasn't found in the query we want to remove it from our data structure
-        let (sprite, direction) = match query.get_mut(event.0) {
+        let (sprite, animator) = match query.get_mut(event.0) {
             Ok(q) => q,
             Err(_) => {
                 entities_to_remove.0.push(event.0);
                 continue;
             }
         };
+        let direction = animator.get_direction();
         let mut curr_animation = animations.entities
             .get_mut(&event.0)
             .expect("Entity Not Found from `ResetAnimationEvent`")
@@ -299,7 +301,7 @@ fn catch_fx_animation_events(
     mut animations: ResMut<Animations>
 ) {
     for event in event_reader.iter() {
-        let entity = commands.spawn(AnimationDirection::default()).id();
+        let entity = commands.spawn(Animator::default()).id();
         let Ok(sprite_sheet_bundle) = animations.start_fx_animation(entity, event.0, event.1) else { 
             warn!("There was a problem spawning your FXAnimation {}", event.0);
             continue;
