@@ -1,6 +1,6 @@
 # SingleFrameAnimation
 
-[SingleFrameAnimation](https://docs.rs/bevy_animations/latest/bevy_animations/struct.SingleFrameAnimation.html) can be a usefull animation for when you have specific stages of an animation. Jump, fall, and land animations are examples where a [SingleFrameAnimation](https://docs.rs/bevy_animations/latest/bevy_animations/struct.SingleFrameAnimation.html) would be used. All of them could be 1 frame but there time at which they happen can vary drastically based off of the user input.
+[SingleFrameAnimation](https://docs.rs/bevy_animations/latest/bevy_animations/struct.SingleFrameAnimation.html) can be a useful animation for when you have specific stages of an animation. Jump, fall, and land animations are examples where a [SingleFrameAnimation](https://docs.rs/bevy_animations/latest/bevy_animations/struct.SingleFrameAnimation.html) would be used. All of them could be 1 frame but there time at which they happen can vary drastically based on the user input.
 
 The configuration properties for this animation are
 

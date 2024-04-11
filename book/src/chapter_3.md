@@ -6,7 +6,7 @@ This is a lengthy chapter that will give some examples of use cases for each ele
 
 There are four main areas of the API that should be interacted with.
 
-[1.](./chapter_1.md) Initilization which was talked about in [chapter_1](./chapter_1.md)
+[1.](./chapter_1.md) Initialization which was talked about in [chapter_1](./chapter_1.md)
 
 [2.](#animations-resource) Interacting with the [Animations](https://docs.rs/bevy_animations/latest/bevy_animations/struct.Animations.html) resource. Which will be used to create animations, add animations to entities, and get information about animations like if they're playing or not.
 
@@ -48,7 +48,7 @@ fn spawn_player(
                         }),
                         true, /* repeating */
                         false, /* blocking */
-                        0 /* blocking_priory */
+                        0 /* blocking_priority */
                     ),
                     "player_running", /* AnimationName */
             ),
@@ -86,7 +86,7 @@ In this example we define a system that will spawn an entity which will be the p
 Here's an example of using this method.
 
 ```rust
-fn fn spawn_player(
+fn spawn_player(
     mut commands: Commands,
     mut animations: ResMut<Animations>
 ) {
@@ -99,7 +99,7 @@ In this example we define a system which spawns the player in and adds the `play
 
 ### [insert_fx_animation()](https://docs.rs/bevy_animations/latest/bevy_animations/struct.Animations.html#method.insert_fx_animation) only takes one parameter
 
-* [NewAnimation](https://docs.rs/bevy_animations/latest/bevy_animations/struct.NewAnimation.html) which is the animation you inserting.
+* [NewAnimation](https://docs.rs/bevy_animations/latest/bevy_animations/struct.NewAnimation.html) which is the animation you are inserting.
 
 Here's an example of using this method.
 
@@ -146,7 +146,7 @@ fn is_blocking(
 }
 ```
 
-In this example we define a run condition system that can be used to determine whether or not to run another system. If the player is in a blocking animation we won't run whatever system we use this on, and vise versa.
+In this example we define a run condition system that can be used to determine whether or not to run another system. If the player is in a blocking animation we won't run whatever system we use this on, and vice versa.
 
 ### [in_animation()](https://docs.rs/bevy_animations/latest/bevy_animations/struct.Animations.html#method.in_animation) takes one parameter
 
@@ -186,7 +186,7 @@ fn in_perry_animation(
 }
 ```
 
-In this example we define a run condition system that can be used to determine whether or not to run another system. If the player is in the `player_perry` animation we won't run whatever system we use this on, and vise versa. This can be usefull for determining whether or not to remove health from the player in a damage system.
+In this example we define a run condition system that can be used to determine whether or not to run another system. If the player is in the `player_perry` animation we won't run whatever system we use this on, and vice versa. This can be useful for determining whether or not to remove health from the player in a damage system.
 
 ### [has_entity()](https://docs.rs/bevy_animations/latest/bevy_animations/struct.Animations.html#method.has_entity) takes one parameter
 
@@ -239,7 +239,7 @@ In this example we are defining a system in which we add the `foliage_idle` anim
 
 In order for an animation to start, we need to send either an [AnimationEvent](https://docs.rs/bevy_animations/latest/bevy_animations/struct.AnimationEvent.html) or an [FXAnimationEvent](https://docs.rs/bevy_animations/latest/bevy_animations/struct.FXAnimationEvent.html) over an [EventWriter](https://docs.rs/bevy/latest/bevy/ecs/prelude/struct.EventWriter.html).
 
-Here's an example of managing a players animations.
+Here's an example of managing a player's animations.
 
 ```rust
 fn animate_player(
@@ -327,6 +327,6 @@ fn player_direction(
 }
 ```
 
-Here we define a simple method that will change the direction of the animation based off of the users input.
+Here we define a simple method that will change the direction of the animation based on the user's input.
 
-## [Coninue To Next Chapter ->](./chapter_4.md)
+## [Continue To Next Chapter ->](./chapter_4.md)

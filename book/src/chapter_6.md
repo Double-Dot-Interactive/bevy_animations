@@ -1,6 +1,6 @@
 # TransformAnimation
 
-[TransformAnimation](https://docs.rs/bevy_animations/latest/bevy_animations/struct.TransformAnimation.html) is another versatile animation that can be used on movement based animations like walking and running. This can also be usefull on entities that have speed changes which should affect how the animation looks.
+[TransformAnimation](https://docs.rs/bevy_animations/latest/bevy_animations/struct.TransformAnimation.html) is another versatile animation that can be used on movement based animations like walking and running. This can also be useful on entities that have speed changes which should affect how the animation looks.
 
 The configuration properties for this animation are
 
@@ -43,4 +43,4 @@ animations.insert_animation(
 )
 ```
 
-## [Coninue To Next Chapter ->](./chapter_7.md)
+## [Continue To Next Chapter ->](./chapter_7.md)

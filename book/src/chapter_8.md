@@ -36,4 +36,4 @@ animations.insert_animation(
 )
 ```
 
-## [Coninue To Next Chapter ->](./chapter_9.md)
+## [Continue To Next Chapter ->](./chapter_9.md)

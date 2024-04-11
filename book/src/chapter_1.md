@@ -48,4 +48,4 @@ fn spawn_player(
 }
 ```
 
-## [Coninue To Next Chapter ->](./chapter_2.md)
+## [Continue To Next Chapter ->](./chapter_2.md)
