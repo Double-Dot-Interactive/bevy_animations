@@ -129,7 +129,7 @@ impl TimedAnimation {
     pub fn cycle_animation(
         &mut self,
         mut sprite: Mut<Sprite>,
-        mut texture_atlas: Mut<TextureAtlas>,
+        mut texture_atlas: Mut<TextureAtlasSprite>,
         direction: &AnimationDirection,
         delta: Duration,
     ) -> Option<()> {
@@ -168,7 +168,7 @@ impl TimedAnimation {
     pub fn reset_animation(
         &mut self,
         sprite: Option<Mut<Sprite>>,
-        texture_atlas: Option<Mut<TextureAtlas>>,
+        texture_atlas: Option<Mut<TextureAtlasSprite>>,
         direction: Option<&AnimationDirection>,
     ) {
         self.animation_tick = 1;
@@ -335,7 +335,7 @@ impl TransformAnimation {
     pub fn cycle_animation(
         &mut self,
         mut sprite: Mut<Sprite>,
-        mut texture_atlas: Mut<TextureAtlas>,
+        mut texture_atlas: Mut<TextureAtlasSprite>,
         direction: &AnimationDirection,
         transform: Mut<Transform>,
         pixels_per_meter: f32,
@@ -430,7 +430,7 @@ impl TransformAnimation {
     pub fn reset_animation(
         &mut self,
         sprite: Option<Mut<Sprite>>,
-        texture_atlas: Option<Mut<TextureAtlas>>,
+        texture_atlas: Option<Mut<TextureAtlasSprite>>,
         direction: Option<&AnimationDirection>,
     ) {
         self.animation_tick = 1;
@@ -542,7 +542,7 @@ impl LinearTimedAnimation {
 
     pub fn cycle_animation(
         &mut self,
-        mut texture_atlas: Mut<TextureAtlas>,
+        mut texture_atlas: Mut<TextureAtlasSprite>,
         delta: Duration,
     ) -> Option<()> {
         self.animation_timer.tick(delta);
@@ -571,7 +571,7 @@ impl LinearTimedAnimation {
     }
 
     #[allow(unused)]
-    pub fn reset_animation(&mut self, mut texture_atlas: Option<Mut<TextureAtlas>>) {
+    pub fn reset_animation(&mut self, mut texture_atlas: Option<Mut<TextureAtlasSprite>>) {
         self.animation_tick = 1;
         let new_dur = Duration::from_secs_f32(
             *self
@@ -682,7 +682,7 @@ impl LinearTransformAnimation {
 
     pub fn cycle_animation(
         &mut self,
-        mut texture_atlas: Mut<TextureAtlas>,
+        mut texture_atlas: Mut<TextureAtlasSprite>,
         transform: Mut<Transform>,
         pixels_per_meter: f32,
     ) -> Option<()> {
@@ -707,7 +707,7 @@ impl LinearTransformAnimation {
     }
 
     #[allow(unused)]
-    pub fn reset_animation(&mut self, mut texture_atlas: Option<Mut<TextureAtlas>>) {
+    pub fn reset_animation(&mut self, mut texture_atlas: Option<Mut<TextureAtlasSprite>>) {
         self.animation_tick = 1;
         if let Some(mut texture_atlas) = texture_atlas {
             let x_index = self
@@ -802,7 +802,7 @@ impl SingleFrameAnimation {
     pub fn cycle_animation(
         &mut self,
         mut sprite: Mut<Sprite>,
-        mut texture_atlas: Mut<TextureAtlas>,
+        mut texture_atlas: Mut<TextureAtlasSprite>,
         direction: &AnimationDirection,
         delta: Duration,
     ) {

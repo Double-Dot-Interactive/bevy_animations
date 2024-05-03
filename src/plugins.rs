@@ -54,8 +54,8 @@ impl Plugin for AnimationsPlugin {
 fn catch_animation_events(
     time: Res<Time>,
     mut query: Query<(
-        &mut TextureAtlas,
-        &mut Handle<TextureAtlasLayout>,
+        &mut TextureAtlasSprite,
+        &mut Handle<TextureAtlas>,
         &mut Sprite,
         &mut Transform,
         &Animator,
@@ -290,7 +290,7 @@ fn catch_animation_events(
 }
 
 fn catch_reset_events(
-    mut query: Query<(&mut Sprite, &mut TextureAtlas, &Animator)>,
+    mut query: Query<(&mut Sprite, &mut TextureAtlasSprite, &Animator)>,
     mut animations: ResMut<Animations>,
     mut entities_to_remove: ResMut<EntitesToRemove>,
     mut animation_events: EventReader<ResetAnimationEvent>,

@@ -125,13 +125,13 @@ pub enum YIndex {
 
 #[derive(Debug, Component, Clone, Default)]
 pub struct Animation {
-    pub handle: Handle<TextureAtlasLayout>,
+    pub handle: Handle<TextureAtlas>,
     pub animation: Arc<Mutex<AnimationType>>,
 }
 
 #[derive(Default, Resource, Debug)]
 pub struct NewAnimation {
-    pub handle: Handle<TextureAtlasLayout>,
+    pub handle: Handle<TextureAtlas>,
     pub animation: AnimationType,
 }
 

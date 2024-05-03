@@ -178,7 +178,7 @@ impl Animations {
     }
 
     /// Gets a clone of the `TextureAtlasLayout` handle for the animation specified
-    pub fn get_handle(&self, animation_name: AnimationName) -> Option<Handle<TextureAtlasLayout>> {
+    pub fn get_handle(&self, animation_name: AnimationName) -> Option<Handle<TextureAtlas>> {
         if let Some(animation) = self.animations.get(&animation_name) {
             return Some(animation.handle.clone());
         }
@@ -191,7 +191,7 @@ impl Animations {
     pub fn get_fx_handle(
         &self,
         animation_name: AnimationName,
-    ) -> Option<Handle<TextureAtlasLayout>> {
+    ) -> Option<Handle<TextureAtlas>> {
         if let Some(animation) = self.fx_animations.get(&animation_name) {
             return Some(animation.handle.clone());
         }
@@ -262,11 +262,10 @@ impl Animations {
         let mut animation = animation.animation.lock().unwrap().clone();
 
         // Grab the atlas from the animations and spawn a new entity with the atlas at the specified pos
-        let mut atlas: TextureAtlas = self
+        let atlas = self
             .get_fx_handle(name)
-            .unwrap_or_else(|| panic!("There was a problem starting FX animation {}", name))
-            .into();
-        atlas.index = if let Some(timed_animation) = animation.timed_animation() {
+            .unwrap_or_else(|| panic!("There was a problem starting FX animation {}", name));
+        let sprite_index = if let Some(timed_animation) = animation.timed_animation() {
             timed_animation.sprite_index(&AnimationDirection::default())
         } else if let Some(transform_animation) = animation.transform_animation() {
             transform_animation.sprite_index(&AnimationDirection::default())
@@ -294,7 +293,8 @@ impl Animations {
             },
         );
         Ok(SpriteSheetBundle {
-            atlas,
+            texture_atlas: atlas,
+            sprite: TextureAtlasSprite::new(sprite_index),
             transform: Transform::from_translation(pos),
             ..Default::default()
         })
