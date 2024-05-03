@@ -180,6 +180,7 @@ fn check_collisions(
 
 | bevy  | bevy_animations  |
 | ----- | ---------------  |
+| 0.13.x | 0.6.x             |
 | 0.12.x | 0.5.x             |
 | 0.11.x | 0.4.x             |
 | 0.10.x | 0.3.x             |
