@@ -1,48 +1,51 @@
 use crate::*;
 
-/// This is Primarily for This Is Primarily For Animations on players or NPCs, for example shooting a bow or reloading a gun
+/// This Is Primarily For Animations on players or NPCs, for example shooting a bow or reloading a gun
 ///
 /// # Example
 /// ```rust
-///        fn init_animation(
-///            mut animations: ResMut<Animations>,
-///            mut commands: Commands,
-///            asset_server: ResMut<AssetServer>,
-///            mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-///            ) {
-///            let asset = asset_server.load("path/to/your/sprite_sheet");
+/// fn init_animation(
+///     mut animations: ResMut<Animations>,
+///     mut commands: Commands,
+///     asset_server: ResMut<AssetServer>,
+///     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+/// ) {
+///     let asset = asset_server.load("path/to/your/sprite_sheet");
 ///
-///            let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
+///     let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
 ///
-///            let texture_atlas_handle = texture_atlases.add(texture_atlas);
+///     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 ///
-///            let entity = commands.spawn(AnimationDirection::default())
-///                .insert(SpriteSheetBundle {
-///                    texture_atlas: texture_atlas_handle.clone(),
-///                    ..Default::default()
-///                }).id();
-///            animations.insert_animation(
-///                 NewAnimation {
-///                     handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
-///                     animation: AnimationType::Timed(
-///                         TimedAnimation::new(
-///                             Vec::from(PLAYER_RUNNING_FRAMES), /* animation_frames */
-///                             Vec::from(PLAYER_RUNNING_TIMINGS), /* frame_timings_in_secs */
-///                             Vec2::new(14., 38.), /* frame */
-///                             AnimationDirectionIndexes::FlipBased(FlipBasedDirection { /* direction_indexes */
-///                                 left_direction_is_flipped: true,
-///                                 x_direction_index: 3,
-///                             }),
-///                             true, /* repeating */
-///                             false, /* blocking */
-///                             0 /* blocking_priory */
-///                         ),
-///                         "player_running", /* AnimationName */
-///                     ),
-///                 },
-///                 Some(entity), /* specify an entity to add the animation to now instead of later */
-///             )
-///       }
+///     let entity = commands
+///         .spawn(AnimationDirection::default())
+///         .insert(SpriteSheetBundle {
+///             texture_atlas: texture_atlas_handle.clone(),
+///             ..Default::default()
+///         })
+///         .id();
+///     animations.insert_animation(
+///         NewAnimation {
+///             handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
+///             animation: AnimationType::Timed(
+///                 TimedAnimation::new(
+///                     Vec::from(PLAYER_RUNNING_FRAMES),  /* animation_frames */
+///                     Vec::from(PLAYER_RUNNING_TIMINGS), /* frame_timings_in_secs */
+///                     Vec2::new(14., 38.),               /* frame */
+///                     AnimationDirectionIndexes::FlipBased(FlipBasedDirection {
+///                         /* direction_indexes */
+///                         left_direction_is_flipped: true,
+///                         x_direction_index: 3,
+///                     }),
+///                     true,  /* repeating */
+///                     false, /* blocking */
+///                     0,     /* blocking_priory */
+///                 ),
+///                 "player_running", /* AnimationName */
+///             ),
+///         },
+///         Some(entity), /* specify an entity to add the animation to now instead of later */
+///     )
+/// }
 /// ```
 #[derive(Clone, Debug, Default)]
 pub struct TimedAnimation {
@@ -68,7 +71,7 @@ impl TimedAnimation {
         blocking: bool,
         blocking_priority: i32,
     ) -> Self {
-        let timer_dur = *frame_timings_in_secs.get(0).unwrap();
+        let timer_dur = *frame_timings_in_secs.first().unwrap();
         Self {
             animation_tick: 1,
             animation_frames,
@@ -82,25 +85,21 @@ impl TimedAnimation {
             blocking_priority,
         }
     }
+
     fn get_x_index(&mut self) -> Option<usize> {
         let index = self.animation_frames.get(self.animation_tick - 1);
         if self.repeating {
             match index {
-                Some(index) => {
-                    return Some(*index)
-                },
+                Some(index) => Some(*index),
                 None => {
                     self.animation_tick = 1;
                     let index = self.animation_frames.get(self.animation_tick - 1)
-                    .expect(format!("There was A Problem Cycling Animation\nThe index is {} but The Frame Length is {}", self.animation_tick, self.animation_frames.len()).as_str());
-                    return Some(*index);
+                    .unwrap_or_else(|| panic!("There was A Problem Cycling Animation\nThe index is {} but The Frame Length is {}", self.animation_tick, self.animation_frames.len()));
+                    Some(*index)
                 }
             }
         } else {
-            match index {
-                Some(index) => return Some(*index),
-                None => return None,
-            };
+            index.copied()
         }
     }
 
@@ -113,10 +112,7 @@ impl TimedAnimation {
     }
 
     pub fn sprite_index(&mut self, direction: &AnimationDirection) -> usize {
-        let x_index = match self.get_x_index() {
-            Some(index) => index,
-            None => 0,
-        };
+        let x_index = self.get_x_index().unwrap_or_default();
 
         match self.get_y_index(direction) {
             YIndex::Index(y_index) => {
@@ -132,7 +128,8 @@ impl TimedAnimation {
 
     pub fn cycle_animation(
         &mut self,
-        mut sprite: Mut<TextureAtlasSprite>,
+        mut sprite: Mut<Sprite>,
+        mut texture_atlas: Mut<TextureAtlas>,
         direction: &AnimationDirection,
         delta: Duration,
     ) -> Option<()> {
@@ -154,7 +151,7 @@ impl TimedAnimation {
             };
             // let index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
             let index = y_index * self.frame.x as usize + x_index;
-            sprite.index = index;
+            texture_atlas.index = index;
             let timing = *self
                 .frame_timings_in_secs
                 .get(self.animation_tick - 1)
@@ -170,29 +167,33 @@ impl TimedAnimation {
 
     pub fn reset_animation(
         &mut self,
-        sprite: Option<Mut<TextureAtlasSprite>>,
+        sprite: Option<Mut<Sprite>>,
+        texture_atlas: Option<Mut<TextureAtlas>>,
         direction: Option<&AnimationDirection>,
     ) {
         self.animation_tick = 1;
         let new_dur = Duration::from_secs_f32(
             *self
                 .frame_timings_in_secs
-                .get(0)
+                .first()
                 .expect("Error With Animation Timing"),
         );
         self.animation_timer.set_duration(new_dur);
         self.animation_timer.reset();
-        if let (Some(mut sprite), Some(direction)) = (sprite, direction) {
+
+        if let (Some(mut sprite), Some(mut texture_atlas), Some(direction)) =
+            (sprite, texture_atlas, direction)
+        {
             let x_index = self
                 .get_x_index()
                 .expect("Something Went Wrong Reseting Animation");
             match self.get_y_index(direction) {
                 YIndex::Index(y_index) => {
-                    sprite.index = y_index * self.frame.x as usize + x_index;
+                    texture_atlas.index = y_index * self.frame.x as usize + x_index;
                 }
                 YIndex::Flip(flip, y_index) => {
                     sprite.flip_x = flip;
-                    sprite.index = y_index * self.frame.x as usize + x_index;
+                    texture_atlas.index = y_index * self.frame.x as usize + x_index;
                 }
             }
         }
@@ -225,21 +226,9 @@ impl TimedAnimation {
             (_, AnimationDirectionIndexes::FX(fx_based_animation)) => {
                 YIndex::Index(fx_based_animation.index)
             }
-            (AnimationDirection::Still, _) => {
-                YIndex::Index(self.previous_dir_index)
-            },
-            (_, _) => {
-                YIndex::Index(1)
-            },
+            (AnimationDirection::Still, _) => YIndex::Index(self.previous_dir_index),
+            (_, _) => YIndex::Index(1),
         }
-    }
-
-    #[allow(unused)]
-    fn is_out_of_bounds(&self, sprite: &Mut<TextureAtlasSprite>, index: usize) -> bool {
-        if sprite.field_len() <= index {
-            return true;
-        }
-        false
     }
 }
 
@@ -248,45 +237,47 @@ impl TimedAnimation {
 /// # Example
 ///
 /// ```rust
-///        fn init_animation(
-///            mut animations: ResMut<Animations>,
-///            mut commands: Commands,
-///            asset_server: ResMut<AssetServer>,
-///            mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-///            ) {
-///            let asset = asset_server.load("path/to/your/sprite_sheet");
+/// fn init_animation(
+///     mut animations: ResMut<Animations>,
+///     mut commands: Commands,
+///     asset_server: ResMut<AssetServer>,
+///     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+/// ) {
+///     let asset = asset_server.load("path/to/your/sprite_sheet");
 ///
-///            let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
+///     let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
 ///
-///            let texture_atlas_handle = texture_atlases.add(texture_atlas);
+///     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 ///
-///            let entity = commands.spawn(AnimationDirection::default())
-///                .insert(SpriteSheetBundle {
-///                    texture_atlas: texture_atlas_handle.clone(),
-///                    ..Default::default()
-///                }).id();
-///            animations.insert_animation(
-///                NewAnimation {
-///                     handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
-///                     animation: AnimationType::Timed(
-///                         TransformAnimation::new(
-///                             Vec::from(PLAYER_RUNNING_FRAMES), /* animation_frames */
-///                             PLAYER_RUNNING_METERS_PER_FRAME, /* meters_per_frame */
-///                             Vec2::new(14., 38.), /* frame */
-///                             AnimationDirectionIndexes::FlipBased(FlipBasedDirection { /* direction_indexes */
-///                                 left_direction_is_flipped: true,
-///                                 x_direction_index: 3,
-///                             }),
-///                             true, /* repeating */
-///                         ),
-///                         "player_running", /* AnimationName */
-///                     ),
-///                 },
-///                 Some(entity), /* specify an entity to add the animation to now instead of later */
-///             )
-///       }
-/// ```
-///
+///     let entity = commands
+///         .spawn(AnimationDirection::default())
+///         .insert(SpriteSheetBundle {
+///             texture_atlas: texture_atlas_handle.clone(),
+///             ..Default::default()
+///         })
+///         .id();
+///     animations.insert_animation(
+///         NewAnimation {
+///             handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
+///             animation: AnimationType::Timed(
+///                 TransformAnimation::new(
+///                     Vec::from(PLAYER_RUNNING_FRAMES), /* animation_frames */
+///                     PLAYER_RUNNING_METERS_PER_FRAME,  /* meters_per_frame */
+///                     Vec2::new(14., 38.),              /* frame */
+///                     AnimationDirectionIndexes::FlipBased(FlipBasedDirection {
+///                         /* direction_indexes */
+///                         left_direction_is_flipped: true,
+///                         x_direction_index: 3,
+///                     }),
+///                     true, /* repeating */
+///                 ),
+///                 "player_running", /* AnimationName */
+///             ),
+///         },
+///         Some(entity), /* specify an entity to add the animation to now instead of later */
+///     )
+/// }
+/// ````
 #[derive(Debug, Default, Clone)]
 pub struct TransformAnimation {
     animation_tick: usize,
@@ -332,10 +323,7 @@ impl TransformAnimation {
     }
 
     pub fn sprite_index(&mut self, direction: &AnimationDirection) -> usize {
-        let x_index = match self.get_x_index() {
-            Some(index) => index,
-            None => 0,
-        };
+        let x_index = self.get_x_index().unwrap_or_default();
         let y_index = match self.get_y_index(direction) {
             YIndex::Index(y_index) => y_index,
             YIndex::Flip(_, y_index) => y_index,
@@ -346,7 +334,8 @@ impl TransformAnimation {
 
     pub fn cycle_animation(
         &mut self,
-        mut sprite: Mut<TextureAtlasSprite>,
+        mut sprite: Mut<Sprite>,
+        mut texture_atlas: Mut<TextureAtlas>,
         direction: &AnimationDirection,
         transform: Mut<Transform>,
         pixels_per_meter: f32,
@@ -358,7 +347,7 @@ impl TransformAnimation {
         };
         if self.ready_to_animate(&transform, pixels_per_meter) || y_index != self.previous_dir_index
         {
-            self.previous_transform = transform.clone();
+            self.previous_transform = *transform;
             let x_index = match self.get_x_index() {
                 Some(index) => index,
                 None => return None,
@@ -376,18 +365,17 @@ impl TransformAnimation {
 
             // let index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
             let index = y_index * self.frame.x as usize + x_index;
-
-            sprite.index = index;
+            texture_atlas.index = index;
 
             self.animation_tick += 1;
             return Some(());
         } else if *direction == AnimationDirection::Still {
-            let x_index = self.animation_frames.get(0).unwrap();
+            let x_index = self.animation_frames.first().unwrap();
 
             let y_index = self.previous_dir_index;
 
-            // sprite.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
-            sprite.index = y_index * self.frame.x as usize + x_index;
+            // texture_atlas.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
+            texture_atlas.index = y_index * self.frame.x as usize + x_index;
             return Some(());
         }
         Some(())
@@ -397,19 +385,16 @@ impl TransformAnimation {
         let index = self.animation_frames.get(self.animation_tick - 1);
         if self.repeating {
             match index {
-                Some(index) => return Some(*index),
+                Some(index) => Some(*index),
                 None => {
                     self.animation_tick = 1;
                     let index = self.animation_frames.get(self.animation_tick)
-                        .expect(format!("There was A Problem Cycling Animation\nThe index is {} but The Frame Length is {}", self.animation_tick, self.animation_frames.len()).as_str());
-                    return Some(*index);
+                        .unwrap_or_else(|| panic!("There was A Problem Cycling Animation\nThe index is {} but The Frame Length is {}", self.animation_tick, self.animation_frames.len()));
+                    Some(*index)
                 }
             }
         } else {
-            match index {
-                Some(index) => return Some(*index),
-                None => return None,
-            };
+            index.copied()
         }
     }
 
@@ -444,21 +429,24 @@ impl TransformAnimation {
 
     pub fn reset_animation(
         &mut self,
-        sprite: Option<Mut<TextureAtlasSprite>>,
+        sprite: Option<Mut<Sprite>>,
+        texture_atlas: Option<Mut<TextureAtlas>>,
         direction: Option<&AnimationDirection>,
     ) {
         self.animation_tick = 1;
-        if let (Some(mut sprite), Some(direction)) = (sprite, direction) {
+        if let (Some(mut sprite), Some(mut texture_atlas), Some(direction)) =
+            (sprite, texture_atlas, direction)
+        {
             let x_index = self
                 .get_x_index()
                 .expect("Something Went Wrong Reseting Animation");
             match self.get_y_index(direction) {
                 YIndex::Index(y_index) => {
-                    sprite.index = y_index * self.frame.x as usize + x_index;
+                    texture_atlas.index = y_index * self.frame.x as usize + x_index;
                 }
                 YIndex::Flip(flip, y_index) => {
                     sprite.flip_x = flip;
-                    sprite.index = y_index * self.frame.x as usize + x_index; 
+                    texture_atlas.index = y_index * self.frame.x as usize + x_index;
                 }
             }
         }
@@ -471,38 +459,40 @@ impl TransformAnimation {
 ///
 /// # Example
 /// ```rust
-///        fn init_animation(
-///            mut animations: ResMut<Animations>,
-///            mut commands: Commands,
-///            asset_server: ResMut<AssetServer>,
-///            mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-///            ) {
-///            let asset = asset_server.load("path/to/your/sprite_sheet");
+/// fn init_animation(
+///     mut animations: ResMut<Animations>,
+///     mut commands: Commands,
+///     asset_server: ResMut<AssetServer>,
+///     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+/// ) {
+///     let asset = asset_server.load("path/to/your/sprite_sheet");
 ///
-///            let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
+///     let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
 ///
-///            let texture_atlas_handle = texture_atlases.add(texture_atlas);
+///     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 ///
-///            let entity = commands.spawn(AnimationDirection::default())
-///                .insert(SpriteSheetBundle {
-///                    texture_atlas: texture_atlas_handle.clone(),
-///                    ..Default::default()
-///                }).id();
-///            animations.insert_animation(
-///                 NewAnimation {
-///                     handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
-///                     animation: AnimationType::LinearTimed(
-///                         LinearTimedAnimtion::new(
-///                             Vec::from(PLAYER_RUNNING_FRAMES), /* animation_frames */
-///                             Vec::from(PLYAER_FRAME_TIMING), /* frame_timings_in_secs */
-///                             true, /* repeating */
-///                         ),
-///                         "player_running", /* AnimationName */
-///                     ),
-///                 },
-///                 Some(entity), /* specify an entity to add the animation to now instead of later */
-///             );
-///       }
+///     let entity = commands
+///         .spawn(AnimationDirection::default())
+///         .insert(SpriteSheetBundle {
+///             texture_atlas: texture_atlas_handle.clone(),
+///             ..Default::default()
+///         })
+///         .id();
+///     animations.insert_animation(
+///         NewAnimation {
+///             handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
+///             animation: AnimationType::LinearTimed(
+///                 LinearTimedAnimtion::new(
+///                     Vec::from(PLAYER_RUNNING_FRAMES), /* animation_frames */
+///                     Vec::from(PLYAER_FRAME_TIMING),   /* frame_timings_in_secs */
+///                     true,                             /* repeating */
+///                 ),
+///                 "player_running", /* AnimationName */
+///             ),
+///         },
+///         Some(entity), /* specify an entity to add the animation to now instead of later */
+///     );
+/// }
 /// ```
 #[derive(Debug, Default, Clone)]
 pub struct LinearTimedAnimation {
@@ -523,7 +513,7 @@ impl LinearTimedAnimation {
             animation_tick: 1,
             animation_timer: AnimationTimer(Timer::from_seconds(
                 *frame_timings_in_secs
-                    .get(0)
+                    .first()
                     .expect("Something went wrong retrieving timings"),
                 TimerMode::Repeating,
             )),
@@ -539,7 +529,7 @@ impl LinearTimedAnimation {
             None => {
                 self.animation_tick = 1;
                 if self.repeating {
-                    return Some(0)
+                    return Some(0);
                 }
                 None
             }
@@ -547,12 +537,12 @@ impl LinearTimedAnimation {
     }
 
     pub fn sprite_index(&mut self, _direction: &AnimationDirection) -> usize {
-        if let Some(index) = self.get_x_index() { index } else { 0 }
+        self.get_x_index().unwrap_or_default()
     }
 
     pub fn cycle_animation(
         &mut self,
-        mut sprite: Mut<TextureAtlasSprite>,
+        mut texture_atlas: Mut<TextureAtlas>,
         delta: Duration,
     ) -> Option<()> {
         self.animation_timer.tick(delta);
@@ -571,7 +561,7 @@ impl LinearTimedAnimation {
             self.animation_timer.set_duration(new_dur);
             self.animation_timer.reset();
 
-            sprite.index = x_index;
+            texture_atlas.index = x_index;
 
             self.animation_tick += 1;
 
@@ -581,21 +571,21 @@ impl LinearTimedAnimation {
     }
 
     #[allow(unused)]
-    pub fn reset_animation(&mut self, mut sprite: Option<Mut<TextureAtlasSprite>>) {
+    pub fn reset_animation(&mut self, mut texture_atlas: Option<Mut<TextureAtlas>>) {
         self.animation_tick = 1;
         let new_dur = Duration::from_secs_f32(
             *self
                 .frame_timings_in_secs
-                .get(0)
+                .first()
                 .expect("Error With Animation Timing"),
         );
         self.animation_timer.set_duration(new_dur);
         self.animation_timer.reset();
-        if let Some(mut sprite) = sprite {
+        if let Some(mut texture_atlas) = texture_atlas {
             let x_index = self
                 .get_x_index()
                 .expect("Something Went Wrong Reseting Animation");
-            sprite.index = x_index
+            texture_atlas.index = x_index
         }
     }
 }
@@ -605,38 +595,40 @@ impl LinearTimedAnimation {
 /// # Example
 ///
 /// ```rust
-///        fn init_animation(
-///            mut animations: ResMut<Animations>,
-///            mut commands: Commands,
-///            asset_server: ResMut<AssetServer>,
-///            mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-///            ) {
-///            let asset = asset_server.load("path/to/your/sprite_sheet");
+/// fn init_animation(
+///     mut animations: ResMut<Animations>,
+///     mut commands: Commands,
+///     asset_server: ResMut<AssetServer>,
+///     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+/// ) {
+///     let asset = asset_server.load("path/to/your/sprite_sheet");
 ///
-///            let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
+///     let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
 ///
-///            let texture_atlas_handle = texture_atlases.add(texture_atlas);
+///     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 ///
-///            let entity = commands.spawn(AnimationDirection::default())
-///                .insert(SpriteSheetBundle {
-///                    texture_atlas: texture_atlas_handle.clone(),
-///                    ..Default::default()
-///                }).id();
-///            animations.insert_animation(
-///                 NewAnimation {
-///                     handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
-///                     animation: AnimationType::LinearTransform(
-///                         LinearTransformAnimation::new(
-///                             Vec::from(PLAYER_RUNNING_FRAMES), /* animation_frames */
-///                             PLAYER_METERS_PER_FRAME, /* meters_per_frame */
-///                             true, /* repeating */
-///                         ),
-///                         "player_running", /* AnimationName */
-///                     ),
-///                 },
-///                 Some(entity), /* specify an entity to add the animation to now instead of later */
-///             )
-///       }
+///     let entity = commands
+///         .spawn(AnimationDirection::default())
+///         .insert(SpriteSheetBundle {
+///             texture_atlas: texture_atlas_handle.clone(),
+///             ..Default::default()
+///         })
+///         .id();
+///     animations.insert_animation(
+///         NewAnimation {
+///             handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
+///             animation: AnimationType::LinearTransform(
+///                 LinearTransformAnimation::new(
+///                     Vec::from(PLAYER_RUNNING_FRAMES), /* animation_frames */
+///                     PLAYER_METERS_PER_FRAME,          /* meters_per_frame */
+///                     true,                             /* repeating */
+///                 ),
+///                 "player_running", /* AnimationName */
+///             ),
+///         },
+///         Some(entity), /* specify an entity to add the animation to now instead of later */
+///     )
+/// }
 /// ```
 #[derive(Debug, Default, Clone)]
 pub struct LinearTransformAnimation {
@@ -649,11 +641,7 @@ pub struct LinearTransformAnimation {
 
 #[allow(unused)]
 impl LinearTransformAnimation {
-    fn new(
-        animation_frames: Vec<usize>,
-        meters_per_frame: f32,
-        repeating: bool,
-    ) -> Self {
+    fn new(animation_frames: Vec<usize>, meters_per_frame: f32, repeating: bool) -> Self {
         Self {
             animation_tick: 1,
             previous_transform: Transform::from_xyz(0., 0., 0.),
@@ -676,7 +664,7 @@ impl LinearTransformAnimation {
     }
 
     pub fn sprite_index(&mut self, _direction: &AnimationDirection) -> usize {
-        if let Some(index) = self.get_x_index() { index } else { 0 }
+        self.get_x_index().unwrap_or_default()
     }
 
     fn get_x_index(&mut self) -> Option<usize> {
@@ -685,21 +673,21 @@ impl LinearTransformAnimation {
             None => {
                 self.animation_tick = 1;
                 if self.repeating {
-                    return Some(0)
+                    return Some(0);
                 }
                 None
-            },
+            }
         }
     }
 
     pub fn cycle_animation(
         &mut self,
-        mut sprite: Mut<TextureAtlasSprite>,
+        mut texture_atlas: Mut<TextureAtlas>,
         transform: Mut<Transform>,
         pixels_per_meter: f32,
     ) -> Option<()> {
         if self.ready_to_animate(&transform, pixels_per_meter) {
-            self.previous_transform = transform.clone();
+            self.previous_transform = *transform;
             let x_index = match self.get_x_index() {
                 Some(index) => index,
                 None => return None,
@@ -710,7 +698,7 @@ impl LinearTransformAnimation {
                 None => return None,
             };
 
-            sprite.index = x_index;
+            texture_atlas.index = x_index;
 
             self.animation_tick += 1;
             return Some(());
@@ -718,67 +706,63 @@ impl LinearTransformAnimation {
         Some(())
     }
 
-    fn is_out_of_bounds(&self, sprite: &Mut<TextureAtlasSprite>, index: usize) -> bool {
-        if sprite.field_len() <= index {
-            return true;
-        }
-        false
-    }
-
     #[allow(unused)]
-    pub fn reset_animation(&mut self, mut sprite: Option<Mut<TextureAtlasSprite>>) {
+    pub fn reset_animation(&mut self, mut texture_atlas: Option<Mut<TextureAtlas>>) {
         self.animation_tick = 1;
-        if let Some(mut sprite) = sprite {
+        if let Some(mut texture_atlas) = texture_atlas {
             let x_index = self
                 .get_x_index()
                 .expect("Something Went Wrong Reseting Animation");
-            sprite.index = x_index
+            texture_atlas.index = x_index
         }
     }
 }
 
-/// Single Frame Animations. These are easy versatile animations to add to any entity or FX animation 
-/// 
+/// Single Frame Animations. These are easy versatile animations to add to any entity or FX animation
+///
 /// # Example
 /// ```rust
-///    fn init_animation(
-///        mut animations: ResMut<Animations>,
-///        mut commands: Commands,
-///        asset_server: ResMut<AssetServer>,
-///        mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-///        ) {
-///        let asset = asset_server.load("path/to/your/sprite_sheet");
+/// fn init_animation(
+///     mut animations: ResMut<Animations>,
+///     mut commands: Commands,
+///     asset_server: ResMut<AssetServer>,
+///     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+/// ) {
+///     let asset = asset_server.load("path/to/your/sprite_sheet");
 ///
-///        let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
+///     let texture_atlas = TextureAtlas::from_grid(asset, Vec2::new(16.0, 16.0), 10, 1, None, None);
 ///
-///        let texture_atlas_handle = texture_atlases.add(texture_atlas);
+///     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 ///
-///        let entity = commands.spawn(AnimationDirection::default())
-///            .insert(SpriteSheetBundle {
-///                texture_atlas: texture_atlas_handle.clone(),
-///                ..Default::default()
-///            }).id();
-///        animations.insert_animation(
-///             NewAnimation {
-///                 handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
-///                 animation: AnimationType::SingleFrame(
-///                     SingleFrameAnimation::new(
-///                         0, /* x_index_pos */
-///                         AnimationDirectionIndexes::IndexBased(FlipBased { /* direction_indexes */
-///                             x_direction_is_flipped: true,
-///                             x_direction_index: 0,
-///                         }),
-///                         true, /* blocking */
-///                         1, /* blocking_priority */
-///                         0.25, /* blocking_duration_in_sec */
-///                         Vec2::new(4., 4.) /* frame */
-///                     ),
-///                     "jump_start", /* AnimationName */
-///                ),
-///            },
-///            Some(entity), /* specify an entity to add the animation to now instead of later */
-///      )
-///   }
+///     let entity = commands
+///         .spawn(AnimationDirection::default())
+///         .insert(SpriteSheetBundle {
+///             texture_atlas: texture_atlas_handle.clone(),
+///             ..Default::default()
+///         })
+///         .id();
+///     animations.insert_animation(
+///         NewAnimation {
+///             handle: texture_atlas_handle.clone(), /* the handle for the TextureAtlas */
+///             animation: AnimationType::SingleFrame(
+///                 SingleFrameAnimation::new(
+///                     0, /* x_index_pos */
+///                     AnimationDirectionIndexes::IndexBased(FlipBased {
+///                         /* direction_indexes */
+///                         x_direction_is_flipped: true,
+///                         x_direction_index: 0,
+///                     }),
+///                     true,              /* blocking */
+///                     1,                 /* blocking_priority */
+///                     0.25,              /* blocking_duration_in_sec */
+///                     Vec2::new(4., 4.), /* frame */
+///                 ),
+///                 "jump_start", /* AnimationName */
+///             ),
+///         },
+///         Some(entity), /* specify an entity to add the animation to now instead of later */
+///     )
+/// }
 /// ```
 #[derive(Debug, Default, Clone)]
 pub struct SingleFrameAnimation {
@@ -794,17 +778,20 @@ pub struct SingleFrameAnimation {
 
 impl SingleFrameAnimation {
     pub fn new(
-        x_index_pos: usize, 
+        x_index_pos: usize,
         direction_indexes: AnimationDirectionIndexes,
-        blocking: bool, 
+        blocking: bool,
         blocking_priority: i32,
         blocking_duration_in_sec: f32,
         frame: Vec2,
     ) -> Self {
-        Self { 
+        Self {
             blocking,
             blocking_priority,
-            blocking_timer: AnimationTimer(Timer::from_seconds(blocking_duration_in_sec, TimerMode::Repeating)),
+            blocking_timer: AnimationTimer(Timer::from_seconds(
+                blocking_duration_in_sec,
+                TimerMode::Repeating,
+            )),
             direction_indexes,
             frame,
             x_index_pos,
@@ -812,7 +799,13 @@ impl SingleFrameAnimation {
         }
     }
     // pub get_y_index(&self, )
-    pub fn cycle_animation(&mut self, mut sprite: Mut<TextureAtlasSprite>, direction: &AnimationDirection, delta: Duration) {
+    pub fn cycle_animation(
+        &mut self,
+        mut sprite: Mut<Sprite>,
+        mut texture_atlas: Mut<TextureAtlas>,
+        direction: &AnimationDirection,
+        delta: Duration,
+    ) {
         if !self.blocking_timer.duration().is_zero() {
             self.blocking_timer.tick(delta);
         }
@@ -823,61 +816,77 @@ impl SingleFrameAnimation {
         let index;
         if *direction != AnimationDirection::Still {
             self.previous_dir_index = AnimationDirection::get_direction(direction).y as usize;
-        } 
+        }
         match self.direction_indexes {
-            AnimationDirectionIndexes::IndexBased(index_based_direction) => {
-                match *direction {
-                    AnimationDirection::Still => index = self.frame.x as usize * self.previous_dir_index + self.x_index_pos,
-                    AnimationDirection::Down => index = self.frame.x as usize * index_based_direction.down + self.x_index_pos,
-                    AnimationDirection::Left => index = self.frame.x as usize * index_based_direction.left + self.x_index_pos,
-                    AnimationDirection::Right => index = self.frame.x as usize * index_based_direction.right + self.x_index_pos,
-                    AnimationDirection::Up => index = self.frame.x as usize * index_based_direction.up + self.x_index_pos,
+            AnimationDirectionIndexes::IndexBased(index_based_direction) => match *direction {
+                AnimationDirection::Still => {
+                    index = self.frame.x as usize * self.previous_dir_index + self.x_index_pos
+                }
+                AnimationDirection::Down => {
+                    index = self.frame.x as usize * index_based_direction.down + self.x_index_pos
+                }
+                AnimationDirection::Left => {
+                    index = self.frame.x as usize * index_based_direction.left + self.x_index_pos
+                }
+                AnimationDirection::Right => {
+                    index = self.frame.x as usize * index_based_direction.right + self.x_index_pos
+                }
+                AnimationDirection::Up => {
+                    index = self.frame.x as usize * index_based_direction.up + self.x_index_pos
                 }
             },
             AnimationDirectionIndexes::FlipBased(flip_based_direction) => {
-                index = self.frame.x as usize * flip_based_direction.x_direction_index + self.x_index_pos;
+                index = self.frame.x as usize * flip_based_direction.x_direction_index
+                    + self.x_index_pos;
                 if flip_based_direction.left_direction_is_flipped {
                     match *direction {
                         AnimationDirection::Left => sprite.flip_x = true,
                         AnimationDirection::Right => sprite.flip_x = false,
                         _ => {}
                     }
-                }
-                else  {
+                } else {
                     match *direction {
                         AnimationDirection::Left => sprite.flip_x = false,
                         AnimationDirection::Right => sprite.flip_x = true,
                         _ => {}
                     }
                 }
-            },
-            AnimationDirectionIndexes::FX(fx_based_animation)=> index = fx_based_animation.index
+            }
+            AnimationDirectionIndexes::FX(fx_based_animation) => index = fx_based_animation.index,
         }
-        sprite.index = index;
+        texture_atlas.index = index;
     }
 
     pub fn sprite_index(&self, direction: &AnimationDirection) -> usize {
         match self.direction_indexes {
-            AnimationDirectionIndexes::IndexBased(index_based_direction) => {
-                match *direction {
-                    AnimationDirection::Still => self.frame.x as usize * self.previous_dir_index + self.x_index_pos,
-                    AnimationDirection::Down => self.frame.x as usize * index_based_direction.down + self.x_index_pos,
-                    AnimationDirection::Left => self.frame.x as usize * index_based_direction.left + self.x_index_pos,
-                    AnimationDirection::Right => self.frame.x as usize * index_based_direction.right + self.x_index_pos,
-                    AnimationDirection::Up => self.frame.x as usize * index_based_direction.up + self.x_index_pos,
+            AnimationDirectionIndexes::IndexBased(index_based_direction) => match *direction {
+                AnimationDirection::Still => {
+                    self.frame.x as usize * self.previous_dir_index + self.x_index_pos
+                }
+                AnimationDirection::Down => {
+                    self.frame.x as usize * index_based_direction.down + self.x_index_pos
+                }
+                AnimationDirection::Left => {
+                    self.frame.x as usize * index_based_direction.left + self.x_index_pos
+                }
+                AnimationDirection::Right => {
+                    self.frame.x as usize * index_based_direction.right + self.x_index_pos
+                }
+                AnimationDirection::Up => {
+                    self.frame.x as usize * index_based_direction.up + self.x_index_pos
                 }
             },
             AnimationDirectionIndexes::FlipBased(flip_based_direction) => {
                 self.frame.x as usize * flip_based_direction.x_direction_index + self.x_index_pos
-            },
-            AnimationDirectionIndexes::FX(fx_based_animation)=> fx_based_animation.index
+            }
+            AnimationDirectionIndexes::FX(fx_based_animation) => fx_based_animation.index,
         }
     }
 
     pub fn reset_animation(
         &mut self,
-        sprite: Option<Mut<TextureAtlasSprite>>,
-        _direction: Option<&AnimationDirection>
+        sprite: Option<Mut<Sprite>>,
+        _direction: Option<&AnimationDirection>,
     ) {
         self.blocking_timer.reset();
         self.blocking_finished = false;
