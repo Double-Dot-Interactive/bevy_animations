@@ -315,6 +315,11 @@ pub struct Animator {
 }
 
 impl Animator {
+    pub fn new(direction: AnimationDirection) -> Self {
+        Self {
+            direction
+        }
+    }
     pub fn change_direction(&mut self, direction: AnimationDirection) -> &mut Self {
         self.direction = direction;
         self
