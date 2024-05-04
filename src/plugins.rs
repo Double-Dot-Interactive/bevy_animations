@@ -56,7 +56,6 @@ fn catch_animation_events(
     mut query: Query<(
         &mut TextureAtlasSprite,
         &mut Handle<TextureAtlas>,
-        &mut Sprite,
         &mut Transform,
         &Animator,
     )>,
@@ -75,12 +74,13 @@ fn catch_animation_events(
             panic!("Animation {} not found", event.0);
         }
         // Query the texture the sprite and the current direction of the entity
-        let (mut texture_atlas, mut texture_atlas_layout, _, _, animator) =
+        let (mut texture_atlas, mut texture_atlas_layout, _, animator) =
             match query.get_mut(event.1) {
                 Ok(handle) => handle,
                 Err(_) => {
                     // If we didn't find the entity from the query it doesn't exist anymore and should be removed via the remove_entites system
                     entities_to_remove.0.push(event.1);
+                    info!("removing entity");
                     continue;
                 }
             };
@@ -188,13 +188,14 @@ fn catch_animation_events(
     // Our main animating loop
     for (entity, animation_entity) in animations.entities.iter_mut() {
         // Query the sprite and transform from the entity
-        let (texture_atlas, _, sprite, transform, _) =
+        let (sprite, _texture_atlas, transform, _) =
             match query.get_mut(*entity) {
                 Ok(query) => query,
                 Err(_) => {
                     // if we didn't find the entity in the query we should remove it as it doesn't exist anymore
                     if !animation_entity.fx_animation {
                         entities_to_remove.0.push(*entity);
+                        info!("removing entity 1");
                     }
                     continue;
                 }
@@ -216,13 +217,13 @@ fn catch_animation_events(
             }
             if transform_animation.cycle_animation(
                 sprite,
-                texture_atlas,
                 &animation_entity.last_valid_direction,
                 transform,
                 config.pixels_per_meter,
             ).is_none() {
                 if animation_entity.fx_animation {
                     entities_to_remove.0.push(*entity);
+                    info!("removing entity");
                     commands.entity(*entity).despawn_recursive();
                 }
                 animation_entity.curr_animation_called = false;
@@ -232,12 +233,12 @@ fn catch_animation_events(
         else if let Some(timed_animation) = curr_animation.timed_animation() {
             if timed_animation.cycle_animation(
                 sprite,
-                texture_atlas,
                 &animation_entity.last_valid_direction,
                 time.delta(),
             ).is_none() {
                 if animation_entity.fx_animation {
                     entities_to_remove.0.push(*entity);
+                    info!("removing entity");
                     commands.entity(*entity).despawn_recursive();
                 }
                 animation_entity.in_blocking_animation = false;
@@ -246,9 +247,10 @@ fn catch_animation_events(
         }
         // if the current animation is linear time based we should cycle it
         else if let Some(linear_timed_animation) = curr_animation.linear_timed_animation() {
-            if linear_timed_animation.cycle_animation(texture_atlas, time.delta()).is_none() {
+            if linear_timed_animation.cycle_animation(sprite, time.delta()).is_none() {
                 if animation_entity.fx_animation {
                     entities_to_remove.0.push(*entity);
+                    info!("removing entity");
                     commands.entity(*entity).despawn_recursive();
                 }
                 animation_entity.in_blocking_animation = false;
@@ -259,12 +261,13 @@ fn catch_animation_events(
         else if let Some(linear_transform_animation) = curr_animation.linear_transform_animation()
         {
             if linear_transform_animation.cycle_animation(
-                texture_atlas,
+                sprite,
                 transform,
                 config.pixels_per_meter,
             ).is_none() {
                 if animation_entity.fx_animation {
                     entities_to_remove.0.push(*entity);
+                    info!("removing entity");
                     commands.entity(*entity).despawn_recursive();
                 }
                 animation_entity.curr_animation_called = false;
@@ -274,7 +277,6 @@ fn catch_animation_events(
         else if let Some(single_frame_animation) = curr_animation.single_frame_animation() {
             single_frame_animation.cycle_animation(
                 sprite,
-                texture_atlas,
                 &animation_entity.last_valid_direction,
                 time.delta(),
             )
@@ -290,17 +292,18 @@ fn catch_animation_events(
 }
 
 fn catch_reset_events(
-    mut query: Query<(&mut Sprite, &mut TextureAtlasSprite, &Animator)>,
+    mut query: Query<(&mut TextureAtlasSprite, &Animator)>,
     mut animations: ResMut<Animations>,
     mut entities_to_remove: ResMut<EntitesToRemove>,
     mut animation_events: EventReader<ResetAnimationEvent>,
 ) {
     for event in animation_events.read() {
         // If the entity wasn't found in the query we want to remove it from our data structure
-        let (sprite, texture_atlas, animator) = match query.get_mut(event.0) {
+        let (sprite, animator) = match query.get_mut(event.0) {
             Ok(q) => q,
             Err(_) => {
                 entities_to_remove.0.push(event.0);
+                info!("removing entity");
                 continue;
             }
         };
@@ -315,20 +318,20 @@ fn catch_reset_events(
         // Try and get the current animation
         // If it is time based
         if let Some(timed_animation) = curr_animation.timed_animation() {
-            timed_animation.reset_animation(Some(sprite), Some(texture_atlas), Some(direction));
+            timed_animation.reset_animation(Some(sprite), Some(direction));
         }
         // If it is transform based
         else if let Some(transform_animation) = curr_animation.transform_animation() {
-            transform_animation.reset_animation(Some(sprite), Some(texture_atlas), Some(direction));
+            transform_animation.reset_animation(Some(sprite), Some(direction));
         }
         // If it is linear time based
         else if let Some(linear_timed_animation) = curr_animation.linear_timed_animation() {
-            linear_timed_animation.reset_animation(Some(texture_atlas));
+            linear_timed_animation.reset_animation(Some(sprite));
         }
         // If it is linear transform based
         else if let Some(linear_transform_animation) = curr_animation.linear_transform_animation()
         {
-            linear_transform_animation.reset_animation(Some(texture_atlas));
+            linear_transform_animation.reset_animation(Some(sprite));
         }
         // If it is single frame based
         else if let Some(single_frame_animation) = curr_animation.single_frame_animation() {

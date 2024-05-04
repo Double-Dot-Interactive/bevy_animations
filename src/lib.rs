@@ -68,45 +68,37 @@ impl Animations {
     ///
     /// # Panics
     /// When an animation with the same name already exists
-    pub fn insert_animation(
-        &mut self,
-        animation: NewAnimation,
-        entity: Option<Entity>,
-    ) -> &mut Self {
+    pub fn insert_animation(&mut self, animation: NewAnimation, entity: Option<Entity>) -> &mut Self {
         let name = animation.animation.get_name();
         let animation = Animation {
             handle: animation.handle,
-            animation: Arc::new(Mutex::new(animation.animation)),
+            animation: Arc::new(Mutex::new(animation.animation))
         };
         let new_animation = Arc::clone(&animation.animation);
         let animation = animation;
-        if self.animations.get_mut(&name).is_none() {
+        if let None = self.animations.get_mut(&name) {
             self.animations.insert(name, animation);
         }
         if let Some(entity) = entity {
             if let Some(animating_entity) = self.entities.get_mut(&entity) {
-                animating_entity
-                    .animations
-                    .insert(name, Arc::clone(&new_animation));
-            } else {
+                animating_entity.animations.insert(name, Arc::clone(&new_animation));
+            }
+            else {
                 let mut map = HashMap::new();
                 map.insert(name, Arc::clone(&new_animation));
-                self.entities.insert(
-                    entity,
-                    AnimatingEntity {
-                        entity,
-                        animations: map,
-                        curr_animation: new_animation,
-                        curr_direction: AnimationDirection::Still,
-                        last_valid_direction: AnimationDirection::default(),
-                        in_blocking_animation: false,
-                        curr_animation_called: false,
-                        fx_animation: false,
-                    },
-                );
+                self.entities.insert(entity, AnimatingEntity { 
+                    entity, 
+                    animations: map, 
+                    curr_animation: new_animation, 
+                    curr_direction: AnimationDirection::Still,
+                    last_valid_direction: AnimationDirection::default(),
+                    in_blocking_animation: false,
+                    curr_animation_called: false,
+                    fx_animation: false
+                });
             }
         }
-        self
+        return self;
     }
 
     /// Add an [Entity] to the pool without a current animation specified

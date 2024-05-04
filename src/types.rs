@@ -213,8 +213,8 @@ impl AnimationType {
 
     pub fn reset_animation(&mut self) {
         match self {
-            AnimationType::Timed(animation, _) => animation.reset_animation(None, None, None),
-            AnimationType::Transform(animation, _) => animation.reset_animation(None, None, None),
+            AnimationType::Timed(animation, _) => animation.reset_animation(None, None,),
+            AnimationType::Transform(animation, _) => animation.reset_animation(None, None),
             AnimationType::LinearTimed(animation, _) => animation.reset_animation(None),
             AnimationType::LinearTransform(animation, _) => animation.reset_animation(None),
             AnimationType::SingleFrame(animation, _) => animation.reset_animation(None, None),
