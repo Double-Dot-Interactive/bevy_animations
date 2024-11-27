@@ -55,7 +55,7 @@ fn catch_animation_events(
     time: Res<Time>,
     mut query: Query<(
         &mut TextureAtlas,
-        &mut Handle<TextureAtlasLayout>,
+        &mut Handle<Image>,
         &mut Sprite,
         &mut Transform,
         &Animator,
@@ -69,13 +69,13 @@ fn catch_animation_events(
     // Our main event loop
     for event in animation_events.read() {
         if !animations.has_entity(&event.1) {
-            panic!("Entity Not Found in Map For {} animation make sure your adding every necessary component to the entity i.e `AnimationDirection`", event.0);
+            panic!("Entity Not Found in Map For {} animation make sure your adding every necessary component to the entity i.e `Animator`", event.0);
         }
         if !animations.has_animation(event.0) {
             panic!("Animation {} not found", event.0);
         }
         // Query the texture the sprite and the current direction of the entity
-        let (mut texture_atlas, mut texture_atlas_layout, _, _, animator) =
+        let (mut texture_atlas, mut texture, _, _, animator) =
             match query.get_mut(event.1) {
                 Ok(handle) => handle,
                 Err(_) => {
@@ -95,7 +95,7 @@ fn catch_animation_events(
                 )
             })
         {
-            let new_animation_handle = animations.get_handle(event.0).unwrap_or_else(|| {
+            let new_animation_handles = animations.get_handles(event.0).unwrap_or_else(|| {
                 panic!(
                     "Something Went Terribly Wrong Getting Animation For {}",
                     event.0
@@ -169,7 +169,8 @@ fn catch_animation_events(
             animating_entity.in_blocking_animation = blocking;
 
             texture_atlas.index = sprite_index;
-            *texture_atlas_layout = new_animation_handle;
+            texture_atlas.layout = new_animation_handles.layout();
+            *texture = new_animation_handles.image();
         }
 
         let animating_entity = animations.get_entity(&event.1).unwrap_or_else(|| panic!("Entity Not Found in Map For {} animation make sure your adding every necessary component to the entity i.e `AnimationDirection`", event.0));

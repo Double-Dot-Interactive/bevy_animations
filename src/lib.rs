@@ -75,7 +75,7 @@ impl Animations {
     ) -> &mut Self {
         let name = animation.animation.get_name();
         let animation = Animation {
-            handle: animation.handle,
+            handles: animation.handles,
             animation: Arc::new(Mutex::new(animation.animation)),
         };
         let new_animation = Arc::clone(&animation.animation);
@@ -177,23 +177,23 @@ impl Animations {
         Ok(())
     }
 
-    /// Gets a clone of the `TextureAtlasLayout` handle for the animation specified
-    pub fn get_handle(&self, animation_name: AnimationName) -> Option<Handle<TextureAtlasLayout>> {
+    /// Gets a clone of the `TextureAtlasLayout` and `Image` handle for the animation specified
+    pub fn get_handles(&self, animation_name: AnimationName) -> Option<Handles> {
         if let Some(animation) = self.animations.get(&animation_name) {
-            return Some(animation.handle.clone());
+            return Some(animation.handles.clone());
         }
         None
     }
 
-    /// Gets a clone of the `TextureAtlasLayout` handle for the fx_animation specified
+    /// Gets a clone of the `TextureAtlasLayout` and `Image` handle for the fx_animation specified
     ///
     /// Returns [None] if the animation does not exist
-    pub fn get_fx_handle(
+    pub fn get_fx_handles(
         &self,
         animation_name: AnimationName,
-    ) -> Option<Handle<TextureAtlasLayout>> {
+    ) -> Option<Handles> {
         if let Some(animation) = self.fx_animations.get(&animation_name) {
-            return Some(animation.handle.clone());
+            return Some(animation.handles.clone());
         }
         None
     }
@@ -236,7 +236,7 @@ impl Animations {
             self
         } else {
             let animation = Animation {
-                handle: value.handle,
+                handles: value.handles,
                 animation: Arc::new(Mutex::new(value.animation)),
             };
             self.fx_animations.insert(key, animation);
@@ -254,19 +254,14 @@ impl Animations {
         key: Entity,
         animation: AnimationName,
         pos: Vec3,
-    ) -> Result<SpriteSheetBundle, ()> {
+    ) -> Result<(SpriteBundle, TextureAtlas), ()> {
         let name = animation;
         let Some(animation) = self.fx_animations.get(animation) else {
             return Err(());
         };
         let mut animation = animation.animation.lock().unwrap().clone();
 
-        // Grab the atlas from the animations and spawn a new entity with the atlas at the specified pos
-        let mut atlas: TextureAtlas = self
-            .get_fx_handle(name)
-            .unwrap_or_else(|| panic!("There was a problem starting FX animation {}", name))
-            .into();
-        atlas.index = if let Some(timed_animation) = animation.timed_animation() {
+        let index = if let Some(timed_animation) = animation.timed_animation() {
             timed_animation.sprite_index(&AnimationDirection::default())
         } else if let Some(transform_animation) = animation.transform_animation() {
             transform_animation.sprite_index(&AnimationDirection::default())
@@ -278,6 +273,16 @@ impl Animations {
             single_frame_animation.sprite_index(&AnimationDirection::default())
         } else {
             panic!("Something Went Terribly Wrong Starting FX Animation");
+        };
+        
+        // Grab the atlas from the animations and spawn a new entity with the atlas at the specified pos
+        let handles: Handles = self
+            .get_fx_handles(name)
+            .unwrap_or_else(|| panic!("There was a problem starting FX animation {}", name))
+            .into();
+        let texture_atlas = TextureAtlas {
+            layout: handles.layout().clone(),
+            index
         };
         // Add the animation and entity to a new AnimatingEntity to be animated
         self.entities.insert(
@@ -293,11 +298,19 @@ impl Animations {
                 fx_animation: true,
             },
         );
-        Ok(SpriteSheetBundle {
-            atlas,
-            transform: Transform::from_translation(pos),
-            ..Default::default()
-        })
+        Ok((
+            SpriteBundle {
+                transform: Transform::from_translation(pos),
+                texture: handles.image().clone(),
+                ..Default::default()
+            },
+            texture_atlas
+        ))
+        // Ok(SpriteSheetBundle {
+        //     atlas,
+        //     transform: Transform::from_translation(pos),
+        //     ..Default::default()
+        // })
     }
 
     /// if the animation exists in the pool

@@ -125,13 +125,33 @@ pub enum YIndex {
 
 #[derive(Debug, Component, Clone, Default)]
 pub struct Animation {
-    pub handle: Handle<TextureAtlasLayout>,
+    pub handles: Handles,
     pub animation: Arc<Mutex<AnimationType>>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Handles {
+    image: Handle<Image>,
+    layout: Handle<TextureAtlasLayout>
+}
+
+impl Handles {
+    pub fn new(image: Handle<Image>, layout: Handle<TextureAtlasLayout>) -> Self {
+        Self { image, layout }
+    }
+    /// Returns a clone of the reference counted handle
+    pub fn image(&self) -> Handle<Image> {
+        self.image.clone()
+    }
+    /// Returns a clone of the reference counted handle
+    pub fn layout(&self) -> Handle<TextureAtlasLayout> {
+        self.layout.clone()
+    }
 }
 
 #[derive(Default, Resource, Debug)]
 pub struct NewAnimation {
-    pub handle: Handle<TextureAtlasLayout>,
+    pub handles: Handles,
     pub animation: AnimationType,
 }
 
@@ -311,7 +331,7 @@ impl AnimationDirection {
 
 #[derive(Debug, PartialEq, Eq, Clone, Default, Component)]
 pub struct Animator {
-    direction: AnimationDirection,
+    pub direction: AnimationDirection,
 }
 
 impl Animator {
