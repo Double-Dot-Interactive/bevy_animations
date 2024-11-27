@@ -125,13 +125,13 @@ pub enum YIndex {
 
 #[derive(Debug, Component, Clone, Default)]
 pub struct Animation {
-    pub handle: Handle<TextureAtlas>,
+    pub handle: Handle<TextureAtlasLayout>,
     pub animation: Arc<Mutex<AnimationType>>,
 }
 
 #[derive(Default, Resource, Debug)]
 pub struct NewAnimation {
-    pub handle: Handle<TextureAtlas>,
+    pub handle: Handle<TextureAtlasLayout>,
     pub animation: AnimationType,
 }
 
@@ -153,7 +153,7 @@ pub enum AnimationType {
 }
 
 impl AnimationType {
-    // pub fn get_atlas(&self) -> Handle<TextureAtlas> {
+    // pub fn get_atlas(&self) -> Handle<TextureAtlasLayout> {
     //     match self {
     //         AnimationType::Timed(animation, _) => animation.handle.clone(),
     //         AnimationType::Transform(animation, _) => animation.handle.clone(),
@@ -213,8 +213,8 @@ impl AnimationType {
 
     pub fn reset_animation(&mut self) {
         match self {
-            AnimationType::Timed(animation, _) => animation.reset_animation(None, None,),
-            AnimationType::Transform(animation, _) => animation.reset_animation(None, None),
+            AnimationType::Timed(animation, _) => animation.reset_animation(None, None, None),
+            AnimationType::Transform(animation, _) => animation.reset_animation(None, None, None),
             AnimationType::LinearTimed(animation, _) => animation.reset_animation(None),
             AnimationType::LinearTransform(animation, _) => animation.reset_animation(None),
             AnimationType::SingleFrame(animation, _) => animation.reset_animation(None, None),

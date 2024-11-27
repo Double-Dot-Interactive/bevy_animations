@@ -170,7 +170,7 @@ impl Animations {
     }
 
     /// Gets a clone of the `TextureAtlasLayout` handle for the animation specified
-    pub fn get_handle(&self, animation_name: AnimationName) -> Option<Handle<TextureAtlas>> {
+    pub fn get_handle(&self, animation_name: AnimationName) -> Option<Handle<TextureAtlasLayout>> {
         if let Some(animation) = self.animations.get(&animation_name) {
             return Some(animation.handle.clone());
         }
@@ -183,7 +183,7 @@ impl Animations {
     pub fn get_fx_handle(
         &self,
         animation_name: AnimationName,
-    ) -> Option<Handle<TextureAtlas>> {
+    ) -> Option<Handle<TextureAtlasLayout>> {
         if let Some(animation) = self.fx_animations.get(&animation_name) {
             return Some(animation.handle.clone());
         }
@@ -285,8 +285,10 @@ impl Animations {
             },
         );
         Ok(SpriteSheetBundle {
-            texture_atlas: atlas,
-            sprite: TextureAtlasSprite::new(sprite_index),
+            atlas: TextureAtlas {
+                layout: atlas.into(),
+                index: sprite_index,
+            },
             transform: Transform::from_translation(pos),
             ..Default::default()
         })
