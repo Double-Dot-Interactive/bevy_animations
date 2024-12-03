@@ -27,6 +27,8 @@ pub struct AnimationsPlugin {
 impl Plugin for AnimationsPlugin {
     /// Builds the plugin
     fn build(&self, app: &mut App) {
+
+
         app.insert_resource(AnimationsConfig {
             pixels_per_meter: self.pixels_per_meter,
         })

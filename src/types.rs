@@ -327,6 +327,17 @@ impl AnimationDirection {
             AnimationDirection::Still => AnimationDirection::STILL,
         }
     }
+    /// gets the horizontal flipped direction
+    /// 
+    /// ## Note
+    /// returns `AnimationDirection::Still` if the provided direction wasn't `Left` or `Right`
+    pub fn flip_horizontal(direction: &Self) -> Self {
+        match direction {
+            AnimationDirection::Left => AnimationDirection::Right,
+            AnimationDirection::Right => AnimationDirection::Left,
+            _ => AnimationDirection::Still
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default, Component)]
