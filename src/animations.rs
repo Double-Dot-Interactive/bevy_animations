@@ -105,7 +105,7 @@ impl TimedAnimation {
 
     fn ready_to_animate(&mut self, delta: Duration) -> bool {
         self.animation_timer.tick(delta);
-        if self.animation_timer.finished() {
+        if self.animation_timer.is_finished() {
             return true;
         }
         false
@@ -129,7 +129,6 @@ impl TimedAnimation {
     pub fn cycle_animation(
         &mut self,
         mut sprite: Mut<Sprite>,
-        mut texture_atlas: Mut<TextureAtlas>,
         direction: &AnimationDirection,
         delta: Duration,
     ) -> Option<()> {
@@ -151,7 +150,11 @@ impl TimedAnimation {
             };
             // let index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
             let index = y_index * self.frame.x as usize + x_index;
-            texture_atlas.index = index;
+            sprite
+                .texture_atlas
+                .as_mut()
+                .expect("Fatal animation error! No texture_atlas set for entity")
+                .index = index;
             let timing = *self
                 .frame_timings_in_secs
                 .get(self.animation_tick - 1)
@@ -168,7 +171,6 @@ impl TimedAnimation {
     pub fn reset_animation(
         &mut self,
         sprite: Option<Mut<Sprite>>,
-        texture_atlas: Option<Mut<TextureAtlas>>,
         direction: Option<&AnimationDirection>,
     ) {
         self.animation_tick = 1;
@@ -181,21 +183,25 @@ impl TimedAnimation {
         self.animation_timer.set_duration(new_dur);
         self.animation_timer.reset();
 
-        if let (Some(mut sprite), Some(mut texture_atlas), Some(direction)) =
-            (sprite, texture_atlas, direction)
-        {
+        if let (Some(mut sprite), Some(direction)) = (sprite, direction) {
             let x_index = self
                 .get_x_index()
                 .expect("Something Went Wrong Reseting Animation");
+            let new_index;
             match self.get_y_index(direction) {
                 YIndex::Index(y_index) => {
-                    texture_atlas.index = y_index * self.frame.x as usize + x_index;
+                    new_index = y_index * self.frame.x as usize + x_index;
                 }
                 YIndex::Flip(flip, y_index) => {
                     sprite.flip_x = flip;
-                    texture_atlas.index = y_index * self.frame.x as usize + x_index;
+                    new_index = y_index * self.frame.x as usize + x_index;
                 }
             }
+            sprite
+                .texture_atlas
+                .as_mut()
+                .expect("Fatal animation error! No texture_atlas added to sprite")
+                .index = new_index;
         }
     }
 
@@ -272,7 +278,6 @@ impl TimedAnimation {
 ///                     true, /* repeating */
 ///                 ),
 ///                 "player_running", /* AnimationName */
-///             ),
 ///         },
 ///         Some(entity), /* specify an entity to add the animation to now instead of later */
 ///     )
@@ -335,7 +340,6 @@ impl TransformAnimation {
     pub fn cycle_animation(
         &mut self,
         mut sprite: Mut<Sprite>,
-        mut texture_atlas: Mut<TextureAtlas>,
         direction: &AnimationDirection,
         transform: Mut<Transform>,
         pixels_per_meter: f32,
@@ -348,10 +352,7 @@ impl TransformAnimation {
         if self.ready_to_animate(&transform, pixels_per_meter) || y_index != self.previous_dir_index
         {
             self.previous_transform = *transform;
-            let x_index = match self.get_x_index() {
-                Some(index) => index,
-                None => return None,
-            };
+            let x_index = self.get_x_index()?;
 
             let y_index = match self.get_y_index(direction) {
                 YIndex::Index(y_index) => y_index,
@@ -365,7 +366,11 @@ impl TransformAnimation {
 
             // let index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
             let index = y_index * self.frame.x as usize + x_index;
-            texture_atlas.index = index;
+            sprite
+                .texture_atlas
+                .as_mut()
+                .expect("Fatal animation error! No texture_atlas set for entity")
+                .index = index;
 
             self.animation_tick += 1;
             return Some(());
@@ -375,7 +380,11 @@ impl TransformAnimation {
             let y_index = self.previous_dir_index;
 
             // texture_atlas.index = (y_index * self.frame.y as usize) - (self.frame.x as usize - x_index);
-            texture_atlas.index = y_index * self.frame.x as usize + x_index;
+            sprite
+                .texture_atlas
+                .as_mut()
+                .expect("Fatal animation error! No texture_atlas set for entity")
+                .index = y_index * self.frame.x as usize + x_index;
             return Some(());
         }
         Some(())
@@ -430,25 +439,28 @@ impl TransformAnimation {
     pub fn reset_animation(
         &mut self,
         sprite: Option<Mut<Sprite>>,
-        texture_atlas: Option<Mut<TextureAtlas>>,
         direction: Option<&AnimationDirection>,
     ) {
         self.animation_tick = 1;
-        if let (Some(mut sprite), Some(mut texture_atlas), Some(direction)) =
-            (sprite, texture_atlas, direction)
-        {
+        if let (Some(mut sprite), Some(direction)) = (sprite, direction) {
             let x_index = self
                 .get_x_index()
                 .expect("Something Went Wrong Reseting Animation");
+            let new_index;
             match self.get_y_index(direction) {
                 YIndex::Index(y_index) => {
-                    texture_atlas.index = y_index * self.frame.x as usize + x_index;
+                    new_index = y_index * self.frame.x as usize + x_index;
                 }
                 YIndex::Flip(flip, y_index) => {
                     sprite.flip_x = flip;
-                    texture_atlas.index = y_index * self.frame.x as usize + x_index;
+                    new_index = y_index * self.frame.x as usize + x_index;
                 }
             }
+            sprite
+                .texture_atlas
+                .as_mut()
+                .expect("Fatal animation error! No texture_atlas set for entity")
+                .index = new_index
         }
     }
 }
@@ -540,17 +552,10 @@ impl LinearTimedAnimation {
         self.get_x_index().unwrap_or_default()
     }
 
-    pub fn cycle_animation(
-        &mut self,
-        mut texture_atlas: Mut<TextureAtlas>,
-        delta: Duration,
-    ) -> Option<()> {
+    pub fn cycle_animation(&mut self, mut sprite: Mut<Sprite>, delta: Duration) -> Option<()> {
         self.animation_timer.tick(delta);
-        if self.animation_timer.finished() {
-            let x_index = match self.get_x_index() {
-                Some(index) => index,
-                None => return None,
-            };
+        if self.animation_timer.is_finished() {
+            let x_index = self.get_x_index()?;
 
             let new_dur = Duration::from_secs_f32(
                 *self
@@ -560,8 +565,11 @@ impl LinearTimedAnimation {
             );
             self.animation_timer.set_duration(new_dur);
             self.animation_timer.reset();
-
-            texture_atlas.index = x_index;
+            sprite
+                .texture_atlas
+                .as_mut()
+                .expect("Fatal animation error! No texture_atlas set for entity")
+                .index = x_index;
 
             self.animation_tick += 1;
 
@@ -571,7 +579,7 @@ impl LinearTimedAnimation {
     }
 
     #[allow(unused)]
-    pub fn reset_animation(&mut self, mut texture_atlas: Option<Mut<TextureAtlas>>) {
+    pub fn reset_animation(&mut self, mut sprite: Option<Mut<Sprite>>) {
         self.animation_tick = 1;
         let new_dur = Duration::from_secs_f32(
             *self
@@ -581,11 +589,15 @@ impl LinearTimedAnimation {
         );
         self.animation_timer.set_duration(new_dur);
         self.animation_timer.reset();
-        if let Some(mut texture_atlas) = texture_atlas {
-            let x_index = self
-                .get_x_index()
-                .expect("Something Went Wrong Reseting Animation");
-            texture_atlas.index = x_index
+        let x_index = self
+            .get_x_index()
+            .expect("Something Went Wrong Reseting Animation");
+        if let Some(mut sprite) = sprite {
+            sprite
+                .texture_atlas
+                .as_mut()
+                .expect("Fatal animation error! No texture_atlas set for entity")
+                .index = x_index
         }
     }
 }
@@ -682,23 +694,21 @@ impl LinearTransformAnimation {
 
     pub fn cycle_animation(
         &mut self,
-        mut texture_atlas: Mut<TextureAtlas>,
+        mut sprite: Mut<Sprite>,
         transform: Mut<Transform>,
         pixels_per_meter: f32,
     ) -> Option<()> {
         if self.ready_to_animate(&transform, pixels_per_meter) {
             self.previous_transform = *transform;
-            let x_index = match self.get_x_index() {
-                Some(index) => index,
-                None => return None,
-            };
+            let x_index = self.get_x_index()?;
 
-            let x_index = match self.get_x_index() {
-                Some(index) => index,
-                None => return None,
-            };
+            let x_index = self.get_x_index()?;
 
-            texture_atlas.index = x_index;
+            sprite
+                .texture_atlas
+                .as_mut()
+                .expect("Fatal animation error! No texture_atlas set for entity")
+                .index = x_index;
 
             self.animation_tick += 1;
             return Some(());
@@ -707,13 +717,15 @@ impl LinearTransformAnimation {
     }
 
     #[allow(unused)]
-    pub fn reset_animation(&mut self, mut texture_atlas: Option<Mut<TextureAtlas>>) {
+    pub fn reset_animation(&mut self, mut sprite: Option<Mut<Sprite>>) {
         self.animation_tick = 1;
-        if let Some(mut texture_atlas) = texture_atlas {
-            let x_index = self
-                .get_x_index()
-                .expect("Something Went Wrong Reseting Animation");
-            texture_atlas.index = x_index
+        if let Some(mut sprite) = sprite {
+            if let Some(mut texture_atlas) = sprite.texture_atlas.as_mut() {
+                let x_index = self
+                    .get_x_index()
+                    .expect("Something Went Wrong Reseting Animation");
+                texture_atlas.index = x_index
+            }
         }
     }
 }
@@ -802,14 +814,13 @@ impl SingleFrameAnimation {
     pub fn cycle_animation(
         &mut self,
         mut sprite: Mut<Sprite>,
-        mut texture_atlas: Mut<TextureAtlas>,
         direction: &AnimationDirection,
         delta: Duration,
     ) {
         if !self.blocking_timer.duration().is_zero() {
             self.blocking_timer.tick(delta);
         }
-        if self.blocking_timer.finished() {
+        if self.blocking_timer.is_finished() {
             self.blocking_finished = true;
         }
 
@@ -854,7 +865,11 @@ impl SingleFrameAnimation {
             }
             AnimationDirectionIndexes::FX(fx_based_animation) => index = fx_based_animation.index,
         }
-        texture_atlas.index = index;
+        sprite
+            .texture_atlas
+            .as_mut()
+            .expect("Fatal animation error! No texture_atlas set for entity")
+            .index = index;
     }
 
     pub fn sprite_index(&self, direction: &AnimationDirection) -> usize {

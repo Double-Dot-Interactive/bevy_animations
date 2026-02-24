@@ -12,8 +12,8 @@ mod types;
 
 pub use animations::*;
 pub use plugins::*;
-pub use types::*;
 
+pub use types::*;
 pub mod prelude {
     pub use crate::animations::{
         LinearTimedAnimation, LinearTransformAnimation, SingleFrameAnimation, TimedAnimation,
@@ -52,6 +52,12 @@ pub struct AnimatingEntity {
     pub last_valid_direction: AnimationDirection,
     pub curr_animation_called: bool,
     pub fx_animation: bool,
+}
+
+#[derive(Default, Debug, Bundle)]
+pub struct SpriteBundle {
+    pub transform: Transform,
+    pub sprite: Sprite,
 }
 
 #[derive(Default, Resource, Debug)]
@@ -188,10 +194,7 @@ impl Animations {
     /// Gets a clone of the `TextureAtlasLayout` and `Image` handle for the fx_animation specified
     ///
     /// Returns [None] if the animation does not exist
-    pub fn get_fx_handles(
-        &self,
-        animation_name: AnimationName,
-    ) -> Option<Handles> {
+    pub fn get_fx_handles(&self, animation_name: AnimationName) -> Option<Handles> {
         if let Some(animation) = self.fx_animations.get(&animation_name) {
             return Some(animation.handles.clone());
         }
@@ -254,10 +257,10 @@ impl Animations {
         key: Entity,
         animation: AnimationName,
         pos: Vec3,
-    ) -> Result<(SpriteBundle, TextureAtlas), ()> {
+    ) -> Option<SpriteBundle> {
         let name = animation;
         let Some(animation) = self.fx_animations.get(animation) else {
-            return Err(());
+            return None;
         };
         let mut animation = animation.animation.lock().unwrap().clone();
 
@@ -274,15 +277,14 @@ impl Animations {
         } else {
             panic!("Something Went Terribly Wrong Starting FX Animation");
         };
-        
+
         // Grab the atlas from the animations and spawn a new entity with the atlas at the specified pos
         let handles: Handles = self
             .get_fx_handles(name)
-            .unwrap_or_else(|| panic!("There was a problem starting FX animation {}", name))
-            .into();
+            .unwrap_or_else(|| panic!("There was a problem starting FX animation {}", name));
         let texture_atlas = TextureAtlas {
             layout: handles.layout().clone(),
-            index
+            index,
         };
         // Add the animation and entity to a new AnimatingEntity to be animated
         self.entities.insert(
@@ -298,14 +300,14 @@ impl Animations {
                 fx_animation: true,
             },
         );
-        Ok((
-            SpriteBundle {
-                transform: Transform::from_translation(pos),
-                texture: handles.image().clone(),
+        Some(SpriteBundle {
+            transform: Transform::from_translation(pos),
+            sprite: Sprite {
+                image: handles.image().clone(),
+                texture_atlas: Some(texture_atlas),
                 ..Default::default()
             },
-            texture_atlas
-        ))
+        })
         // Ok(SpriteSheetBundle {
         //     atlas,
         //     transform: Transform::from_translation(pos),

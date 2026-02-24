@@ -132,7 +132,7 @@ pub struct Animation {
 #[derive(Debug, Clone, Default)]
 pub struct Handles {
     image: Handle<Image>,
-    layout: Handle<TextureAtlasLayout>
+    layout: Handle<TextureAtlasLayout>,
 }
 
 impl Handles {
@@ -233,8 +233,8 @@ impl AnimationType {
 
     pub fn reset_animation(&mut self) {
         match self {
-            AnimationType::Timed(animation, _) => animation.reset_animation(None, None, None),
-            AnimationType::Transform(animation, _) => animation.reset_animation(None, None, None),
+            AnimationType::Timed(animation, _) => animation.reset_animation(None, None),
+            AnimationType::Transform(animation, _) => animation.reset_animation(None, None),
             AnimationType::LinearTimed(animation, _) => animation.reset_animation(None),
             AnimationType::LinearTransform(animation, _) => animation.reset_animation(None),
             AnimationType::SingleFrame(animation, _) => animation.reset_animation(None, None),
@@ -269,7 +269,7 @@ impl AnimationType {
 /// * **Note** that you can send an event of the same name multiple times even while an animation is in progress without ruining it
 ///
 /// * **Note** an animation that has been sent will animate till end or repeat forever
-#[derive(Debug, Event)]
+#[derive(Debug, Message)]
 pub struct AnimationEvent(pub AnimationName, pub Entity);
 
 /// Send a request to reset the animation of an `Entity`
@@ -292,13 +292,13 @@ pub struct AnimationEvent(pub AnimationName, pub Entity);
 /// ```
 ///
 /// * **Note** this will overwrite an animation request in the same frame
-#[derive(Debug, Event)]
+#[derive(Debug, Message)]
 pub struct ResetAnimationEvent(pub Entity);
 
 /// Send a request to start an FX animation. This will spawn a new animation for and FX then immediately despawn it
 ///
 /// Needs the `AnimationName` and the position to spawn the new FX animation at
-#[derive(Debug, Event)]
+#[derive(Debug, Message)]
 pub struct FXAnimationEvent(pub AnimationName, pub Vec3);
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -328,14 +328,14 @@ impl AnimationDirection {
         }
     }
     /// gets the horizontal flipped direction
-    /// 
+    ///
     /// ## Note
     /// returns `AnimationDirection::Still` if the provided direction wasn't `Left` or `Right`
     pub fn flip_horizontal(direction: &Self) -> Self {
         match direction {
             AnimationDirection::Left => AnimationDirection::Right,
             AnimationDirection::Right => AnimationDirection::Left,
-            _ => AnimationDirection::Still
+            _ => AnimationDirection::Still,
         }
     }
 }
